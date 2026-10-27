@@ -1,0 +1,21 @@
+{
+  "name": "ezshop-web",
+  "private": true,
+  "version": "0.1.0",
+  "license": "MIT",
+  "packageManager": "npm@11.13.0",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:admin": "npm run dev --workspace @ezshop/admin",
+    "build:admin": "npm run build --workspace @ezshop/admin",
+    "test": "npm run test --workspace @ezshop/admin",
+    "lint": "npm run lint --workspace @ezshop/admin",
+    "format": "prettier --write \"**/*.{cjs,css,html,js,json,md,ts,vue}\"",
+    "format:check": "prettier --check \"**/*.{cjs,css,html,js,json,md,ts,vue}\""
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2"
+  }
+}
