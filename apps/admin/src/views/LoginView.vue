@@ -26,11 +26,7 @@ function triggerTyping() {
     window.clearTimeout(typingTimer.value);
   }
 
-  typingTimer.value = window.setTimeout(
-    () => {
-    },
-    loading.value ? 90 : 150,
-  );
+  typingTimer.value = window.setTimeout(() => {}, loading.value ? 90 : 150);
 }
 
 function stopTyping() {
@@ -162,6 +158,29 @@ onBeforeUnmount(stopTyping);
   font-size: clamp(30px, 5vw, 52px);
   line-height: 1;
   letter-spacing: -0.02em;
+  color: transparent;
+  background-image: linear-gradient(120deg, #ffffff, #ffd2e4 26%, #a9b8ff 60%, #7ff0de 100%);
+  background-clip: text;
+  background-size: 180% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: title-gradient 9s ease-in-out infinite alternate;
+}
+
+@keyframes title-gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-title {
+    animation: none;
+    background-position: 0% 50%;
+  }
 }
 
 .login-subtitle {
@@ -258,4 +277,3 @@ onBeforeUnmount(stopTyping);
   }
 }
 </style>
-  color: #f7f9ff;
