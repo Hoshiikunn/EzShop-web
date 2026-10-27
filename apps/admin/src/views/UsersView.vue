@@ -21,11 +21,25 @@ const pagination = reactive({
 const filters = reactive({
   username: '',
   realName: '',
-  gender: '',
+  gender: undefined as 0 | 1 | undefined,
   mobile: '',
-  status: '',
-  createTimeRange: [] as string[],
+  status: undefined as 0 | 1 | undefined,
+  createTimeRange: null as [string, string] | null,
 });
+
+function normalizeOptionalNumber(value: 0 | 1 | undefined): 0 | 1 | undefined {
+  return value === 0 || value === 1 ? value : undefined;
+}
+
+function normalizeDateRange(value: [string, string] | null): [string, string] | undefined {
+  if (!value || value.length !== 2) {
+    return undefined;
+  }
+
+  const [begin, end] = value;
+
+  return begin && end ? [begin, end] : undefined;
+}
 
 function buildParams(): UserPageQuery {
   const params: UserPageQuery = {
@@ -41,21 +55,26 @@ function buildParams(): UserPageQuery {
     params.realName = filters.realName.trim();
   }
 
-  if (filters.gender !== '') {
-    params.gender = Number(filters.gender) as 0 | 1;
+  const gender = normalizeOptionalNumber(filters.gender);
+
+  if (gender !== undefined) {
+    params.gender = gender;
   }
 
   if (filters.mobile.trim()) {
     params.mobile = filters.mobile.trim();
   }
 
-  if (filters.status !== '') {
-    params.status = Number(filters.status) as 0 | 1;
+  const status = normalizeOptionalNumber(filters.status);
+
+  if (status !== undefined) {
+    params.status = status;
   }
 
-  if (filters.createTimeRange.length === 2) {
-    params.createTimeBegin = filters.createTimeRange[0];
-    params.createTimeEnd = filters.createTimeRange[1];
+  const createTimeRange = normalizeDateRange(filters.createTimeRange);
+
+  if (createTimeRange) {
+    [params.createTimeBegin, params.createTimeEnd] = createTimeRange;
   }
 
   return params;
@@ -83,10 +102,10 @@ async function searchUsers() {
 async function resetFilters() {
   filters.username = '';
   filters.realName = '';
-  filters.gender = '';
+  filters.gender = undefined;
   filters.mobile = '';
-  filters.status = '';
-  filters.createTimeRange = [];
+  filters.status = undefined;
+  filters.createTimeRange = null;
   pagination.current = 1;
   await loadUsers();
 }
@@ -146,8 +165,8 @@ onMounted(loadUsers);
 
         <el-form-item label="性别">
           <el-select v-model="filters.gender" placeholder="全部" clearable class="filter-select">
-            <el-option label="女" value="0" />
-            <el-option label="男" value="1" />
+            <el-option label="女" :value="0" />
+            <el-option label="男" :value="1" />
           </el-select>
         </el-form-item>
 
@@ -163,8 +182,8 @@ onMounted(loadUsers);
 
         <el-form-item label="状态">
           <el-select v-model="filters.status" placeholder="全部" clearable class="filter-select">
-            <el-option label="禁用" value="0" />
-            <el-option label="启用" value="1" />
+            <el-option label="禁用" :value="0" />
+            <el-option label="启用" :value="1" />
           </el-select>
         </el-form-item>
 
