@@ -1,5 +1,5 @@
 import { requestJson } from '@/api/client';
-import type { Page, UserPageQuery, UserPageItem, UserInfo } from '@/types/api';
+import type { Page, UserPageQuery, UserPageItem, UserInfo, UserId } from '@/types/api';
 
 export const sysUserApi = {
   page(params: UserPageQuery) {
@@ -9,7 +9,7 @@ export const sysUserApi = {
       params,
     });
   },
-  info(id: number) {
+  info(id: UserId) {
     return requestJson<UserInfo>({
       url: `/admin/sys/user/${id}`,
       method: 'get',

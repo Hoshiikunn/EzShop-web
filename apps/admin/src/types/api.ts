@@ -22,6 +22,8 @@ export interface Page<T> {
   pages: number;
 }
 
+export type UserId = string;
+
 export interface UserPageQuery {
   current?: number;
   size?: number;
@@ -35,7 +37,7 @@ export interface UserPageQuery {
 }
 
 export interface UserPageItem {
-  id: number;
+  id: UserId;
   username: string;
   realName?: string;
   avatarUrl?: string;
