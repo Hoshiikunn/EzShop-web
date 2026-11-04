@@ -1,5 +1,13 @@
 import { requestJson } from '@/api/client';
-import type { Page, UserPageQuery, UserPageItem, UserInfo, UserId } from '@/types/api';
+import type {
+  Page,
+  UserPageQuery,
+  UserPageItem,
+  UserInfo,
+  UserId,
+  UserCreatePayload,
+  UserInitInfo,
+} from '@/types/api';
 
 export const sysUserApi = {
   page(params: UserPageQuery) {
@@ -13,6 +21,13 @@ export const sysUserApi = {
     return requestJson<UserInfo>({
       url: `/admin/sys/user/${id}`,
       method: 'get',
+    });
+  },
+  add(payload: UserCreatePayload) {
+    return requestJson<UserInitInfo>({
+      url: '/admin/sys/user/add',
+      method: 'post',
+      data: payload,
     });
   },
 };

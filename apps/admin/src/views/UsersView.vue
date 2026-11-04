@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Eye, RefreshCw, Search } from 'lucide-vue-next';
+import { Eye, RefreshCw, Search, UserPlus } from 'lucide-vue-next';
 import { sysUserApi } from '@/api/sys-user';
 import type { UserPageItem, UserInfo, UserPageQuery } from '@/types/api';
 import { formatDateTime } from '@/utils/format';
+import CreateUserDrawer from '@/components/CreateUserDrawer.vue';
 
 const users = ref<UserPageItem[]>([]);
 const total = ref(0);
@@ -12,6 +13,7 @@ const tableLoading = ref(false);
 const detailLoading = ref(false);
 const drawerVisible = ref(false);
 const detail = ref<UserInfo | null>(null);
+const createUserVisible = ref(false);
 
 const pagination = reactive({
   current: 1,
@@ -212,6 +214,14 @@ onMounted(loadUsers);
     </div>
 
     <div class="panel table-panel">
+      <div class="table-header">
+        <h2>用户列表</h2>
+        <button class="create-button" type="button" @click="createUserVisible = true">
+          <UserPlus :size="16" />
+          添加用户
+        </button>
+      </div>
+
       <el-table
         v-loading="tableLoading"
         :data="users"
@@ -321,6 +331,8 @@ onMounted(loadUsers);
         </template>
       </div>
     </el-drawer>
+
+    <CreateUserDrawer v-model="createUserVisible" @created="loadUsers" />
   </section>
 </template>
 
@@ -387,6 +399,39 @@ onMounted(loadUsers);
 
 .table-panel {
   padding: 8px 20px 20px;
+}
+
+.table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+}
+
+.table-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.create-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 13px;
+  border: 1px solid var(--ez-primary);
+  border-radius: 7px;
+  color: #fff;
+  background: var(--ez-primary);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.create-button:hover {
+  border-color: var(--ez-primary-dark);
+  background: var(--ez-primary-dark);
 }
 
 .user-table {
