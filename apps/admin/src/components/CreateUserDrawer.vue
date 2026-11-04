@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { nextTick, reactive, ref, watch } from 'vue';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
-import { Copy, FileImage, ImagePlus, RotateCcw, Trash2 } from 'lucide-vue-next';
+import { Copy, RotateCcw } from 'lucide-vue-next';
 import { sysUserApi } from '@/api/sys-user';
+import AvatarFileInput from '@/components/AvatarFileInput.vue';
 import type { Gender, UserCreatePayload, UserInitInfo } from '@/types/api';
 
 const visible = defineModel<boolean>({
@@ -14,7 +15,6 @@ const emit = defineEmits<{
 }>();
 
 const formRef = ref<FormInstance>();
-const avatarInputRef = ref<HTMLInputElement | null>(null);
 const submitting = ref(false);
 const createdUser = ref<UserInitInfo | null>(null);
 const avatarFile = ref<File | null>(null);
@@ -59,44 +59,8 @@ const rules: FormRules<UserCreatePayload> = {
   email: [{ type: 'email', message: '邮箱格式错误', trigger: 'blur' }],
 };
 
-function formatFileSize(size: number): string {
-  if (size < 1024) {
-    return `${size} B`;
-  }
-
-  if (size < 1024 * 1024) {
-    return `${(size / 1024).toFixed(1)} KB`;
-  }
-
-  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function clearAvatarInput() {
-  if (avatarInputRef.value) {
-    avatarInputRef.value.value = '';
-  }
-}
-
-function handleAvatarChange(event: Event) {
-  const input = event.target as HTMLInputElement;
-  const file = input.files?.[0];
-
-  if (!file) {
-    return;
-  }
-
-  if (!file.type.startsWith('image/')) {
-    ElMessage.warning('请选择图片文件');
-    clearAvatarInput();
-    return;
-  }
-
-  avatarFile.value = file;
-}
-
 function removeAvatarFile() {
   avatarFile.value = null;
-  clearAvatarInput();
 }
 
 function buildPayload(): UserCreatePayload {
@@ -240,36 +204,7 @@ watch(visible, (value) => {
         </el-form-item>
 
         <el-form-item label="头像">
-          <input
-            ref="avatarInputRef"
-            class="avatar-input"
-            type="file"
-            accept="image/*"
-            @change="handleAvatarChange"
-          />
-
-          <button
-            v-if="!avatarFile"
-            class="avatar-add"
-            type="button"
-            @click="avatarInputRef?.click()"
-          >
-            <ImagePlus :size="18" />
-            <span>添加文件</span>
-          </button>
-
-          <div v-else class="avatar-file">
-            <FileImage :size="18" />
-            <div class="avatar-file-info">
-              <strong>{{ avatarFile.name }}</strong>
-              <span>{{ formatFileSize(avatarFile.size) }}</span>
-            </div>
-            <button type="button" aria-label="移除头像文件" @click="removeAvatarFile">
-              <Trash2 :size="15" />
-            </button>
-          </div>
-
-          <p class="avatar-note">上传接口暂未开放，当前文件仅作预留，不会随表单提交。</p>
+          <AvatarFileInput v-model="avatarFile" />
         </el-form-item>
 
         <el-form-item label="手机号" prop="mobile">
@@ -346,83 +281,6 @@ watch(visible, (value) => {
   justify-content: flex-end;
   gap: 10px;
   padding-top: 6px;
-}
-
-.avatar-input {
-  display: none;
-}
-
-.avatar-add {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 76px;
-  padding: 14px;
-  border: 1px dashed var(--ez-line);
-  border-radius: 10px;
-  color: #5b6780;
-  background: #f8faff;
-  cursor: pointer;
-  transition:
-    color 0.2s ease,
-    border-color 0.2s ease,
-    background 0.2s ease;
-}
-
-.avatar-add:hover {
-  color: var(--ez-primary-dark);
-  border-color: rgba(56, 102, 242, 0.4);
-  background: #f6f8ff;
-}
-
-.avatar-file {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 12px;
-  border: 1px solid var(--ez-line);
-  border-radius: 10px;
-  color: var(--ez-ink);
-  background: #f8faff;
-}
-
-.avatar-file-info {
-  display: grid;
-  flex: 1;
-  min-width: 0;
-}
-
-.avatar-file-info strong {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.avatar-file-info span {
-  color: var(--ez-muted);
-  font-size: 12px;
-}
-
-.avatar-file button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border: 1px solid var(--ez-line);
-  border-radius: 7px;
-  color: #d2494a;
-  background: #fff;
-  cursor: pointer;
-}
-
-.avatar-note {
-  margin: 8px 0 0;
-  color: var(--ez-muted);
-  font-size: 12px;
 }
 
 .success-panel {

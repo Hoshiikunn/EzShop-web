@@ -66,6 +66,10 @@ export interface UserCreatePayload {
   email?: string;
 }
 
+export interface UserUpdatePayload extends UserCreatePayload {
+  id: UserId;
+}
+
 export interface UserInitInfo {
   username: string;
   initPassword: string;

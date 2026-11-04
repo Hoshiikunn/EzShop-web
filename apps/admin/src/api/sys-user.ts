@@ -7,6 +7,7 @@ import type {
   UserId,
   UserCreatePayload,
   UserInitInfo,
+  UserUpdatePayload,
 } from '@/types/api';
 
 export const sysUserApi = {
@@ -27,6 +28,13 @@ export const sysUserApi = {
     return requestJson<UserInitInfo>({
       url: '/admin/sys/user/add',
       method: 'post',
+      data: payload,
+    });
+  },
+  update(payload: UserUpdatePayload) {
+    return requestJson<null>({
+      url: '/admin/sys/user/update',
+      method: 'put',
       data: payload,
     });
   },

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Eye, RefreshCw, Search, UserPlus } from 'lucide-vue-next';
+import { Eye, Pencil, RefreshCw, Search, UserPlus } from 'lucide-vue-next';
 import { sysUserApi } from '@/api/sys-user';
 import type { UserPageItem, UserInfo, UserPageQuery } from '@/types/api';
 import { formatDateTime } from '@/utils/format';
 import CreateUserDrawer from '@/components/CreateUserDrawer.vue';
+import EditUserDrawer from '@/components/EditUserDrawer.vue';
 
 const users = ref<UserPageItem[]>([]);
 const total = ref(0);
@@ -14,6 +15,8 @@ const detailLoading = ref(false);
 const drawerVisible = ref(false);
 const detail = ref<UserInfo | null>(null);
 const createUserVisible = ref(false);
+const editUserVisible = ref(false);
+const editUserId = ref<UserId | null>(null);
 
 const pagination = reactive({
   current: 1,
@@ -138,6 +141,23 @@ async function openDetail(row: UserPageItem) {
   }
 }
 
+function openEditor(userId: UserId) {
+  editUserId.value = userId;
+  editUserVisible.value = true;
+}
+
+async function handleUserUpdated(userId: UserId) {
+  await loadUsers();
+
+  if (drawerVisible.value && detail.value?.id === userId) {
+    try {
+      detail.value = await sysUserApi.info(userId);
+    } catch (error) {
+      ElMessage.error(error instanceof Error ? error.message : '用户详情刷新失败');
+    }
+  }
+}
+
 onMounted(loadUsers);
 </script>
 
@@ -250,11 +270,15 @@ onMounted(loadUsers);
             {{ formatDateTime(row.createTime) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100" fixed="right">
+        <el-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
             <button class="table-action" type="button" @click.stop="openDetail(row)">
               <Eye :size="15" />
               详情
+            </button>
+            <button class="table-action" type="button" @click.stop="openEditor(row.id)">
+              <Pencil :size="15" />
+              编辑
             </button>
           </template>
         </el-table-column>
@@ -284,6 +308,10 @@ onMounted(loadUsers);
               <strong>{{ detail.realName || detail.username }}</strong>
               <span>{{ detail.username }}</span>
             </div>
+            <button class="detail-edit-button" type="button" @click="openEditor(detail.id)">
+              <Pencil :size="15" />
+              编辑
+            </button>
           </div>
 
           <dl class="detail-list">
@@ -333,6 +361,7 @@ onMounted(loadUsers);
     </el-drawer>
 
     <CreateUserDrawer v-model="createUserVisible" @created="loadUsers" />
+    <EditUserDrawer v-model="editUserVisible" :user-id="editUserId" @updated="handleUserUpdated" />
   </section>
 </template>
 
@@ -466,6 +495,10 @@ onMounted(loadUsers);
   background: #f5f8ff;
 }
 
+.table-action + .table-action {
+  margin-left: 8px;
+}
+
 .detail-body {
   min-height: 300px;
 }
@@ -475,6 +508,30 @@ onMounted(loadUsers);
   align-items: center;
   gap: 14px;
   padding-bottom: 20px;
+}
+
+.detail-profile > div {
+  min-width: 0;
+}
+
+.detail-edit-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  margin-left: auto;
+  padding: 0 10px;
+  border: 1px solid var(--ez-line);
+  border-radius: 7px;
+  color: var(--ez-primary-dark);
+  background: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.detail-edit-button:hover {
+  border-color: rgba(56, 102, 242, 0.38);
+  background: #f5f8ff;
 }
 
 .avatar {
