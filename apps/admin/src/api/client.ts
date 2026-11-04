@@ -1,6 +1,9 @@
+import JSONBig from 'json-bigint';
 import axios, { AxiosError, type AxiosRequestConfig } from 'axios';
 import type { Result } from '@/types/api';
 import { tokenStorage } from '@/utils/token-storage';
+
+const jsonBig = JSONBig({ storeAsString: true });
 
 export class ApiError extends Error {
   readonly code: number;
@@ -15,6 +18,15 @@ export class ApiError extends Error {
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   timeout: 10000,
+  transformResponse: [
+    (data) => {
+      if (typeof data !== 'string' || !data.trim()) {
+        return data;
+      }
+
+      return jsonBig.parse(data);
+    },
+  ],
 });
 
 client.interceptors.request.use((config) => {
