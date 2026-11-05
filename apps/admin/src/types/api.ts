@@ -74,3 +74,7 @@ export interface UserInitInfo {
   username: string;
   initPassword: string;
 }
+
+export interface UserBatchDeletePayload {
+  ids: UserId[];
+}

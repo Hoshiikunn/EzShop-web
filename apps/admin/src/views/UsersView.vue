@@ -1,9 +1,15 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
-import { ElMessage } from 'element-plus';
-import { Eye, Pencil, RefreshCw, Search, UserPlus } from 'lucide-vue-next';
+import { computed, onMounted, reactive, ref } from 'vue';
+import { ElMessage, ElMessageBox, type TableInstance } from 'element-plus';
+import { Eye, Pencil, RefreshCw, Search, Trash2, UserPlus } from 'lucide-vue-next';
 import { sysUserApi } from '@/api/sys-user';
-import type { UserPageItem, UserInfo, UserPageQuery } from '@/types/api';
+import type {
+  UserBatchDeletePayload,
+  UserPageItem,
+  UserInfo,
+  UserPageQuery,
+  UserId,
+} from '@/types/api';
 import { formatDateTime } from '@/utils/format';
 import CreateUserDrawer from '@/components/CreateUserDrawer.vue';
 import EditUserDrawer from '@/components/EditUserDrawer.vue';
@@ -14,9 +20,16 @@ const tableLoading = ref(false);
 const detailLoading = ref(false);
 const drawerVisible = ref(false);
 const detail = ref<UserInfo | null>(null);
+const userTableRef = ref<TableInstance>();
+const selectedUsers = ref<UserPageItem[]>([]);
 const createUserVisible = ref(false);
 const editUserVisible = ref(false);
 const editUserId = ref<UserId | null>(null);
+const deleting = ref(false);
+
+const selectedCount = computed(() => selectedUsers.value.length);
+
+const batchDeleteDisabled = computed(() => deleting.value || selectedCount.value === 0);
 
 const pagination = reactive({
   current: 1,
@@ -158,6 +171,77 @@ async function handleUserUpdated(userId: UserId) {
   }
 }
 
+function handleSelectionChange(rows: UserPageItem[]) {
+  selectedUsers.value = rows;
+}
+
+function buildDeleteConfirmMessage(users: UserPageItem[]): string {
+  if (users.length === 1) {
+    const user = users[0];
+
+    return `确定要删除用户「${user.realName || user.username}」吗？删除后不可从本系统恢复。`;
+  }
+
+  const previewNames = users
+    .slice(0, 3)
+    .map((user) => user.realName || user.username)
+    .join('、');
+
+  return `确定要删除 ${previewNames} 等 ${users.length} 个用户吗？删除后不可从本系统恢复。`;
+}
+
+async function confirmDeleteUsers(users: UserPageItem[]) {
+  const ids = users.map((user) => user.id);
+
+  if (ids.length === 0) {
+    ElMessage.warning('请选择要删除的用户');
+    return;
+  }
+
+  if (ids.length > 100) {
+    ElMessage.warning('单次最多删除 100 个用户');
+    return;
+  }
+
+  try {
+    await ElMessageBox.confirm(buildDeleteConfirmMessage(users), '删除用户', {
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+    });
+  } catch {
+    return;
+  }
+
+  deleting.value = true;
+
+  try {
+    await sysUserApi.batchDelete({ ids });
+    ElMessage.success(ids.length === 1 ? '用户已删除' : `已删除 ${ids.length} 个用户`);
+
+    const deletedIds = new Set(ids);
+
+    if (detail.value && deletedIds.has(detail.value.id)) {
+      drawerVisible.value = false;
+      detail.value = null;
+    }
+
+    userTableRef.value?.clearSelection();
+    await loadUsers();
+
+    const pageCount = Math.max(1, Math.ceil(total.value / pagination.size));
+
+    if (pagination.current > pageCount) {
+      pagination.current = pageCount;
+      await loadUsers();
+    }
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '用户删除失败');
+  } finally {
+    deleting.value = false;
+  }
+}
+
 onMounted(loadUsers);
 </script>
 
@@ -236,19 +320,33 @@ onMounted(loadUsers);
     <div class="panel table-panel">
       <div class="table-header">
         <h2>用户列表</h2>
-        <button class="create-button" type="button" @click="createUserVisible = true">
-          <UserPlus :size="16" />
-          添加用户
-        </button>
+        <div class="header-actions">
+          <button
+            class="danger-button"
+            type="button"
+            :disabled="batchDeleteDisabled"
+            @click="confirmDeleteUsers([...selectedUsers])"
+          >
+            <Trash2 :size="16" />
+            删除所选{{ selectedCount ? `（${selectedCount}）` : '' }}
+          </button>
+          <button class="create-button" type="button" @click="createUserVisible = true">
+            <UserPlus :size="16" />
+            添加用户
+          </button>
+        </div>
       </div>
 
       <el-table
+        ref="userTableRef"
         v-loading="tableLoading"
         :data="users"
         row-key="id"
         class="user-table"
+        @selection-change="handleSelectionChange"
         @row-click="openDetail"
       >
+        <el-table-column type="selection" width="44" />
         <el-table-column prop="id" label="ID" min-width="90" />
         <el-table-column prop="username" label="用户名" min-width="140" show-overflow-tooltip />
         <el-table-column prop="realName" label="真实姓名" min-width="130" show-overflow-tooltip />
@@ -270,7 +368,7 @@ onMounted(loadUsers);
             {{ formatDateTime(row.createTime) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160" fixed="right">
+        <el-table-column label="操作" width="230" fixed="right">
           <template #default="{ row }">
             <button class="table-action" type="button" @click.stop="openDetail(row)">
               <Eye :size="15" />
@@ -279,6 +377,15 @@ onMounted(loadUsers);
             <button class="table-action" type="button" @click.stop="openEditor(row.id)">
               <Pencil :size="15" />
               编辑
+            </button>
+            <button
+              class="table-action delete-action"
+              type="button"
+              :disabled="deleting"
+              @click.stop="confirmDeleteUsers([row])"
+            >
+              <Trash2 :size="15" />
+              删除
             </button>
           </template>
         </el-table-column>
@@ -311,6 +418,15 @@ onMounted(loadUsers);
             <button class="detail-edit-button" type="button" @click="openEditor(detail.id)">
               <Pencil :size="15" />
               编辑
+            </button>
+            <button
+              class="detail-delete-button"
+              type="button"
+              :disabled="deleting"
+              @click="confirmDeleteUsers([detail])"
+            >
+              <Trash2 :size="15" />
+              删除
             </button>
           </div>
 
@@ -463,6 +579,40 @@ onMounted(loadUsers);
   background: var(--ez-primary-dark);
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.danger-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 13px;
+  border: 1px solid rgba(210, 73, 74, 0.36);
+  border-radius: 7px;
+  color: #d2494a;
+  background: #fff;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.danger-button:hover:not(:disabled) {
+  color: #fff;
+  border-color: #d2494a;
+  background: #d2494a;
+}
+
+.danger-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .user-table {
   width: 100%;
 }
@@ -493,6 +643,21 @@ onMounted(loadUsers);
 .table-action:hover {
   border-color: rgba(56, 102, 242, 0.38);
   background: #f5f8ff;
+}
+
+.table-action.delete-action {
+  color: #d2494a;
+}
+
+.table-action.delete-action:hover:not(:disabled) {
+  border-color: rgba(210, 73, 74, 0.38);
+  color: #d2494a;
+  background: #fff5f5;
+}
+
+.table-action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .table-action + .table-action {
@@ -532,6 +697,30 @@ onMounted(loadUsers);
 .detail-edit-button:hover {
   border-color: rgba(56, 102, 242, 0.38);
   background: #f5f8ff;
+}
+
+.detail-delete-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid rgba(210, 73, 74, 0.36);
+  border-radius: 7px;
+  color: #d2494a;
+  background: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.detail-delete-button:hover:not(:disabled) {
+  border-color: #d2494a;
+  background: #fff5f5;
+}
+
+.detail-delete-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .avatar {
