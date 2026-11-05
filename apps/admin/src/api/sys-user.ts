@@ -8,6 +8,7 @@ import type {
   UserCreatePayload,
   UserInitInfo,
   UserUpdatePayload,
+  UserBatchDeletePayload,
 } from '@/types/api';
 
 export const sysUserApi = {
@@ -35,6 +36,13 @@ export const sysUserApi = {
     return requestJson<null>({
       url: '/admin/sys/user/update',
       method: 'put',
+      data: payload,
+    });
+  },
+  batchDelete(payload: UserBatchDeletePayload) {
+    return requestJson<null>({
+      url: '/admin/sys/user/batch/delete',
+      method: 'post',
       data: payload,
     });
   },
