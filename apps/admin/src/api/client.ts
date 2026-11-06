@@ -1,9 +1,11 @@
 import JSONBig from 'json-bigint';
 import axios, { AxiosError, type AxiosRequestConfig } from 'axios';
+import { ElMessage } from 'element-plus';
 import type { Result } from '@/types/api';
 import { tokenStorage } from '@/utils/token-storage';
 
 const jsonBig = JSONBig({ storeAsString: true });
+let redirectingToLogin = false;
 
 export class ApiError extends Error {
   readonly code: number;
@@ -43,8 +45,24 @@ client.interceptors.response.use(
   (response) => response,
   (error: AxiosError<Result<unknown>>) => {
     if (error.response?.status === 401) {
+      const payload = error.response.data;
+      const message =
+        payload &&
+        typeof payload === 'object' &&
+        'msg' in payload &&
+        typeof payload.msg === 'string'
+          ? payload.msg
+          : '登录信息已失效，请重新登录';
+
       tokenStorage.clear();
-      window.location.href = '/login';
+
+      if (!redirectingToLogin) {
+        redirectingToLogin = true;
+        ElMessage.error(message);
+        window.setTimeout(() => {
+          window.location.href = '/login';
+        }, 1200);
+      }
     }
 
     return Promise.reject(error);
