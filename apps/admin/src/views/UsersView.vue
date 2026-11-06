@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type TableInstance } from 'element-plus';
-import { Eye, Pencil, RefreshCw, Search, Trash2, UserPlus } from 'lucide-vue-next';
+import { Eye, Pencil, Power, RefreshCw, Search, Trash2, UserPlus } from 'lucide-vue-next';
 import { sysUserApi } from '@/api/sys-user';
 import type {
   UserBatchDeletePayload,
@@ -9,6 +9,7 @@ import type {
   UserInfo,
   UserPageQuery,
   UserId,
+  UserStatusPayload,
 } from '@/types/api';
 import { formatDateTime } from '@/utils/format';
 import CreateUserDrawer from '@/components/CreateUserDrawer.vue';
@@ -26,6 +27,7 @@ const createUserVisible = ref(false);
 const editUserVisible = ref(false);
 const editUserId = ref<UserId | null>(null);
 const deleting = ref(false);
+const statusUpdatingId = ref<UserId | null>(null);
 
 const selectedCount = computed(() => selectedUsers.value.length);
 
@@ -242,6 +244,44 @@ async function confirmDeleteUsers(users: UserPageItem[]) {
   }
 }
 
+async function changeUserStatus(user: UserPageItem, status: 0 | 1) {
+  if (user.status === status || statusUpdatingId.value) {
+    return;
+  }
+
+  if (status === 0) {
+    try {
+      await ElMessageBox.confirm(
+        `确定要禁用用户「${user.realName || user.username}」吗？禁用后该用户将无法登录。`,
+        '禁用用户',
+        {
+          confirmButtonText: '禁用',
+          cancelButtonText: '取消',
+          type: 'warning',
+        },
+      );
+    } catch {
+      return;
+    }
+  }
+
+  statusUpdatingId.value = user.id;
+
+  try {
+    await sysUserApi.changeStatus({ id: user.id, status } satisfies UserStatusPayload);
+    ElMessage.success(status === 1 ? '用户已启用' : '用户已禁用');
+    await loadUsers();
+
+    if (drawerVisible.value && detail.value?.id === user.id) {
+      detail.value = await sysUserApi.info(user.id);
+    }
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '用户状态变更失败');
+  } finally {
+    statusUpdatingId.value = null;
+  }
+}
+
 onMounted(loadUsers);
 </script>
 
@@ -368,7 +408,7 @@ onMounted(loadUsers);
             {{ formatDateTime(row.createTime) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="230" fixed="right">
+        <el-table-column label="操作" width="310" fixed="right">
           <template #default="{ row }">
             <button class="table-action" type="button" @click.stop="openDetail(row)">
               <Eye :size="15" />
@@ -377,6 +417,15 @@ onMounted(loadUsers);
             <button class="table-action" type="button" @click.stop="openEditor(row.id)">
               <Pencil :size="15" />
               编辑
+            </button>
+            <button
+              class="table-action status-action"
+              type="button"
+              :disabled="statusUpdatingId === row.id || deleting"
+              @click.stop="changeUserStatus(row, row.status === 1 ? 0 : 1)"
+            >
+              <Power :size="15" />
+              {{ row.status === 1 ? '禁用' : '启用' }}
             </button>
             <button
               class="table-action delete-action"
@@ -415,12 +464,24 @@ onMounted(loadUsers);
               <strong>{{ detail.realName || detail.username }}</strong>
               <span>{{ detail.username }}</span>
             </div>
-            <button class="detail-edit-button" type="button" @click="openEditor(detail.id)">
+          </div>
+
+          <div class="detail-actions">
+            <button class="detail-action-button" type="button" @click="openEditor(detail.id)">
               <Pencil :size="15" />
               编辑
             </button>
             <button
-              class="detail-delete-button"
+              class="detail-action-button status-action"
+              type="button"
+              :disabled="statusUpdatingId === detail.id || deleting"
+              @click="changeUserStatus(detail, detail.status === 1 ? 0 : 1)"
+            >
+              <Power :size="15" />
+              {{ detail.status === 1 ? '禁用' : '启用' }}
+            </button>
+            <button
+              class="detail-action-button delete-action"
               type="button"
               :disabled="deleting"
               @click="confirmDeleteUsers([detail])"
@@ -655,6 +716,16 @@ onMounted(loadUsers);
   background: #fff5f5;
 }
 
+.table-action.status-action {
+  color: #8a6116;
+}
+
+.table-action.status-action:hover:not(:disabled) {
+  border-color: rgba(138, 97, 22, 0.38);
+  color: #8a6116;
+  background: #fff8e6;
+}
+
 .table-action:disabled {
   opacity: 0.55;
   cursor: not-allowed;
@@ -679,12 +750,19 @@ onMounted(loadUsers);
   min-width: 0;
 }
 
-.detail-edit-button {
+.detail-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-bottom: 18px;
+}
+
+.detail-action-button {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   height: 30px;
-  margin-left: auto;
   padding: 0 10px;
   border: 1px solid var(--ez-line);
   border-radius: 7px;
@@ -694,31 +772,31 @@ onMounted(loadUsers);
   white-space: nowrap;
 }
 
-.detail-edit-button:hover {
+.detail-action-button:hover {
   border-color: rgba(56, 102, 242, 0.38);
   background: #f5f8ff;
 }
 
-.detail-delete-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 30px;
-  padding: 0 10px;
-  border: 1px solid rgba(210, 73, 74, 0.36);
-  border-radius: 7px;
-  color: #d2494a;
-  background: #fff;
-  cursor: pointer;
-  white-space: nowrap;
+.detail-action-button.status-action {
+  color: #8a6116;
 }
 
-.detail-delete-button:hover:not(:disabled) {
-  border-color: #d2494a;
+.detail-action-button.status-action:hover:not(:disabled) {
+  border-color: rgba(138, 97, 22, 0.38);
+  color: #8a6116;
+  background: #fff8e6;
+}
+
+.detail-action-button.delete-action {
+  color: #d2494a;
+}
+
+.detail-action-button.delete-action:hover:not(:disabled) {
+  border-color: rgba(210, 73, 74, 0.38);
   background: #fff5f5;
 }
 
-.detail-delete-button:disabled {
+.detail-action-button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }

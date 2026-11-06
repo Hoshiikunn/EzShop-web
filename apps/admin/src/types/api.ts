@@ -78,3 +78,8 @@ export interface UserInitInfo {
 export interface UserBatchDeletePayload {
   ids: UserId[];
 }
+
+export interface UserStatusPayload {
+  id: UserId;
+  status: 0 | 1;
+}
