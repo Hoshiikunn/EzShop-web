@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/auth';
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const appVersion = __APP_VERSION__;
 
 const navigation = [
   { path: '/dashboard', title: '仪表盘', icon: LayoutDashboard },
@@ -60,13 +61,18 @@ async function handleLogout() {
         <Settings :size="16" />
         <span>系统模块开发中</span>
       </div>
+
+      <div class="sidebar-version">
+        <span class="version-label">当前版本</span>
+        <strong class="version-value">v{{ appVersion }}</strong>
+      </div>
     </aside>
 
     <div class="workspace">
       <header class="topbar">
         <div>
           <h1>{{ route.meta.title || 'EzShop Admin' }}</h1>
-          <p>SpringBoot 后台控制台</p>
+          <p>SpringBoot 后台控制台 · v{{ appVersion }}</p>
         </div>
 
         <button class="logout-button" type="button" @click="handleLogout">
@@ -169,6 +175,34 @@ async function handleLogout() {
   padding-top: 18px;
   color: var(--ez-muted);
   font-size: 12px;
+}
+
+.sidebar-version {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 11px 13px;
+  border: 1px solid var(--ez-line);
+  border-radius: 10px;
+  background: #f8faff;
+  box-shadow: 0 1px 2px rgba(46, 65, 104, 0.04);
+}
+
+.version-label {
+  color: #63718d;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.version-value {
+  color: var(--ez-primary-dark);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
 }
 
 .workspace {
