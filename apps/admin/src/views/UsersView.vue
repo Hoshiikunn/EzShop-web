@@ -33,12 +33,16 @@ const selectedCount = computed(() => selectedUsers.value.length);
 
 const batchDeleteDisabled = computed(() => deleting.value || selectedCount.value === 0);
 
+const userIdPattern = /^[1-9]\d*$/;
+const maxUserId = '9223372036854775807';
+
 const pagination = reactive({
   current: 1,
   size: 10,
 });
 
 const filters = reactive({
+  id: '',
   username: '',
   realName: '',
   gender: undefined as 0 | 1 | undefined,
@@ -61,11 +65,41 @@ function normalizeDateRange(value: [string, string] | null): [string, string] | 
   return begin && end ? [begin, end] : undefined;
 }
 
+function isValidUserId(value: string): boolean {
+  if (!userIdPattern.test(value)) {
+    return false;
+  }
+
+  if (value.length < maxUserId.length) {
+    return true;
+  }
+
+  return value.length === maxUserId.length && value <= maxUserId;
+}
+
+function validateUserIdFilter(): boolean {
+  const userId = filters.id.trim();
+
+  if (!userId || isValidUserId(userId)) {
+    return true;
+  }
+
+  ElMessage.warning('用户 ID 必须为正整数');
+
+  return false;
+}
+
 function buildParams(): UserPageQuery {
   const params: UserPageQuery = {
     current: pagination.current,
     size: pagination.size,
   };
+
+  const userId = filters.id.trim();
+
+  if (userId) {
+    params.id = userId;
+  }
 
   if (filters.username.trim()) {
     params.username = filters.username.trim();
@@ -101,6 +135,10 @@ function buildParams(): UserPageQuery {
 }
 
 async function loadUsers() {
+  if (!validateUserIdFilter()) {
+    return;
+  }
+
   tableLoading.value = true;
 
   try {
@@ -120,6 +158,7 @@ async function searchUsers() {
 }
 
 async function resetFilters() {
+  filters.id = '';
   filters.username = '';
   filters.realName = '';
   filters.gender = undefined;
@@ -289,6 +328,17 @@ onMounted(loadUsers);
   <section class="users-page">
     <div class="panel filter-panel">
       <el-form inline class="filter-form" @submit.prevent="searchUsers">
+        <el-form-item label="用户 ID">
+          <el-input
+            v-model="filters.id"
+            placeholder="精确匹配"
+            clearable
+            maxlength="19"
+            inputmode="numeric"
+            class="filter-input"
+          />
+        </el-form-item>
+
         <el-form-item label="用户名">
           <el-input
             v-model="filters.username"

@@ -33,6 +33,7 @@ export type RoleStatus = 0 | 1;
 export interface UserPageQuery {
   current?: number;
   size?: number;
+  id?: UserId;
   username?: string;
   realName?: string;
   gender?: 0 | 1;
