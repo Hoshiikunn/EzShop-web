@@ -26,6 +26,10 @@ export type UserId = string;
 
 export type Gender = 0 | 1;
 
+export type RoleId = string;
+
+export type RoleStatus = 0 | 1;
+
 export interface UserPageQuery {
   current?: number;
   size?: number;
@@ -82,4 +86,38 @@ export interface UserBatchDeletePayload {
 export interface UserStatusPayload {
   id: UserId;
   status: 0 | 1;
+}
+
+export interface RolePageQuery {
+  current?: number;
+  size?: number;
+  roleName?: string;
+  roleKey?: string;
+  status?: RoleStatus;
+  createTimeBegin?: string;
+  createTimeEnd?: string;
+}
+
+export interface RolePageItem {
+  id: RoleId;
+  roleName: string;
+  roleKey: string;
+  sort?: number;
+  status: RoleStatus;
+  remark?: string;
+  createTime?: string;
+  updateTime?: string;
+}
+
+export type RoleInfo = RolePageItem;
+
+export interface RoleMenuNode {
+  id: RoleId;
+  parentId?: RoleId;
+  title: string;
+  path?: string;
+  icon?: string;
+  sort?: number;
+  visible?: 0 | 1;
+  children?: RoleMenuNode[];
 }
