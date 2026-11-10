@@ -3,7 +3,7 @@ import { nextTick, reactive, ref, watch } from 'vue';
 import { ElMessage, type FormInstance, type FormRules, type TreeInstance } from 'element-plus';
 import { sysRoleApi } from '@/api/sys-role';
 import { sysMenuApi } from '@/api/sys-menu';
-import type { MenuTreeNode, RoleCreatePayload } from '@/types/api';
+import type { MenuTreeNode, MenuType, RoleCreatePayload } from '@/types/api';
 
 const visible = defineModel<boolean>({
   required: true,
@@ -24,6 +24,26 @@ const menuTreeProps = {
   label: 'menuName',
   children: 'children',
 };
+
+const menuTypeLabels: Record<MenuType, string> = {
+  M: '目录',
+  C: '菜单',
+  F: '按钮',
+};
+
+const menuTypeTagTypes: Record<MenuType, 'primary' | 'success' | 'warning'> = {
+  M: 'primary',
+  C: 'success',
+  F: 'warning',
+};
+
+function getMenuTypeLabel(menuType: string): string {
+  return menuTypeLabels[menuType as MenuType] ?? '未知';
+}
+
+function getMenuTypeTagType(menuType: string): 'primary' | 'success' | 'warning' {
+  return menuTypeTagTypes[menuType as MenuType] ?? 'primary';
+}
 
 const form = reactive<RoleCreatePayload>({
   roleName: '',
@@ -202,7 +222,21 @@ watch(visible, (value) => {
             :props="menuTreeProps"
             default-expand-all
             @check="handleMenuCheck"
-          />
+          >
+            <template #default="{ data }">
+              <div class="menu-node">
+                <span class="menu-name">{{ data.menuName }}</span>
+                <el-tag
+                  class="menu-type"
+                  size="small"
+                  effect="light"
+                  :type="getMenuTypeTagType(data.menuType)"
+                >
+                  {{ getMenuTypeLabel(data.menuType) }}
+                </el-tag>
+              </div>
+            </template>
+          </el-tree>
 
           <el-empty
             v-if="!menuTreeLoading && menuTree.length === 0"
@@ -241,6 +275,32 @@ watch(visible, (value) => {
   border: 1px solid var(--ez-line);
   border-radius: 10px;
   background: #f8faff;
+}
+
+.menu-tree-panel :deep(.el-tree-node__content) {
+  height: 32px;
+  border-radius: 7px;
+}
+
+.menu-node {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  padding-right: 4px;
+}
+
+.menu-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-type {
+  flex-shrink: 0;
 }
 
 .ghost-button,
