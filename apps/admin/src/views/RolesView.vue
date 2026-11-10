@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Eye, Info, RefreshCw, Search } from 'lucide-vue-next';
+import { Eye, Info, Plus, RefreshCw, Search } from 'lucide-vue-next';
 import { sysRoleApi } from '@/api/sys-role';
 import type { RolePageItem, RoleInfo, RolePageQuery } from '@/types/api';
 import { formatDateTime } from '@/utils/format';
+import AddRoleDrawer from '@/components/AddRoleDrawer.vue';
 
 const roles = ref<RolePageItem[]>([]);
 const total = ref(0);
@@ -12,6 +13,7 @@ const tableLoading = ref(false);
 const detailLoading = ref(false);
 const drawerVisible = ref(false);
 const detail = ref<RoleInfo | null>(null);
+const addRoleVisible = ref(false);
 
 const pagination = reactive({
   current: 1,
@@ -177,6 +179,10 @@ onMounted(loadRoles);
     <div class="panel table-panel">
       <div class="table-header">
         <h2>角色列表</h2>
+        <button class="create-button" type="button" @click="addRoleVisible = true">
+          <Plus :size="16" />
+          添加角色
+        </button>
       </div>
 
       <el-table
@@ -284,6 +290,8 @@ onMounted(loadRoles);
         </template>
       </div>
     </el-drawer>
+
+    <AddRoleDrawer v-model="addRoleVisible" @created="loadRoles" />
   </section>
 </template>
 
@@ -364,6 +372,27 @@ onMounted(loadRoles);
 .table-header h2 {
   margin: 0;
   font-size: 18px;
+}
+
+.create-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 13px;
+  border: 1px solid var(--ez-primary);
+  border-radius: 7px;
+  color: #fff;
+  background: var(--ez-primary);
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.create-button:hover {
+  border-color: var(--ez-primary-dark);
+  background: var(--ez-primary-dark);
 }
 
 .role-table {

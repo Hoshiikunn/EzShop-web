@@ -30,6 +30,10 @@ export type RoleId = string;
 
 export type RoleStatus = 0 | 1;
 
+export type MenuId = string;
+
+export type MenuType = 'M' | 'C' | 'F';
+
 export interface UserPageQuery {
   current?: number;
   size?: number;
@@ -109,15 +113,29 @@ export interface RolePageItem {
   updateTime?: string;
 }
 
-export type RoleInfo = RolePageItem;
+export interface RoleCreatePayload {
+  roleName: string;
+  roleKey: string;
+  sort: number;
+  remark?: string;
+  menuIds?: MenuId[];
+}
 
-export interface RoleMenuNode {
-  id: RoleId;
-  parentId?: RoleId;
-  title: string;
+export interface RoleInfo extends RolePageItem {
+  menuIds?: MenuId[];
+}
+
+export interface MenuTreeNode {
+  id: MenuId;
+  pid: MenuId;
+  menuName: string;
+  menuType: MenuType;
   path?: string;
+  component?: string;
+  perms?: string;
   icon?: string;
   sort?: number;
   visible?: 0 | 1;
-  children?: RoleMenuNode[];
+  status?: 0 | 1;
+  children: MenuTreeNode[];
 }
