@@ -1,9 +1,17 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Eye, Info, Plus, RefreshCw, Search } from 'lucide-vue-next';
+import { Eye, ListTree, Plus, RefreshCw, Search } from 'lucide-vue-next';
 import { sysRoleApi } from '@/api/sys-role';
-import type { RolePageItem, RoleInfo, RolePageQuery } from '@/types/api';
+import { sysMenuApi } from '@/api/sys-menu';
+import type {
+  MenuId,
+  MenuTreeNode,
+  MenuType,
+  RolePageItem,
+  RoleInfo,
+  RolePageQuery,
+} from '@/types/api';
 import { formatDateTime } from '@/utils/format';
 import AddRoleDrawer from '@/components/AddRoleDrawer.vue';
 
@@ -13,7 +21,41 @@ const tableLoading = ref(false);
 const detailLoading = ref(false);
 const drawerVisible = ref(false);
 const detail = ref<RoleInfo | null>(null);
+const menuTree = ref<MenuTreeNode[]>([]);
 const addRoleVisible = ref(false);
+
+const menuTreeProps = {
+  label: 'menuName',
+  children: 'children',
+};
+
+const menuTypeLabels: Record<MenuType, string> = {
+  M: '目录',
+  C: '菜单',
+  F: '按钮',
+};
+
+const menuTypeTagTypes: Record<MenuType, 'primary' | 'success' | 'warning'> = {
+  M: 'primary',
+  C: 'success',
+  F: 'warning',
+};
+
+function getMenuTypeLabel(menuType: string): string {
+  return menuTypeLabels[menuType as MenuType] ?? '未知';
+}
+
+function getMenuTypeTagType(menuType: string): 'primary' | 'success' | 'warning' {
+  return menuTypeTagTypes[menuType as MenuType] ?? 'primary';
+}
+
+const selectedMenuCount = computed(() => detail.value?.menuIds?.length ?? 0);
+
+const selectedMenuTree = computed(() =>
+  filterMenuTree(menuTree.value, new Set(detail.value?.menuIds ?? [])),
+);
+
+let detailRequestToken = 0;
 
 const pagination = reactive({
   current: 1,
@@ -104,18 +146,47 @@ function handleCurrentChange(current: number) {
 }
 
 async function openDetail(row: RolePageItem) {
+  const requestToken = ++detailRequestToken;
   drawerVisible.value = true;
   detailLoading.value = true;
 
   try {
-    detail.value = await sysRoleApi.info(row.id);
+    const [roleInfo, menuTreeData] = await Promise.all([
+      sysRoleApi.info(row.id),
+      sysMenuApi.tree(),
+    ]);
+
+    if (requestToken !== detailRequestToken) {
+      return;
+    }
+
+    detail.value = roleInfo;
+    menuTree.value = menuTreeData;
   } catch (error) {
+    if (requestToken !== detailRequestToken) {
+      return;
+    }
+
     detail.value = null;
     drawerVisible.value = false;
     ElMessage.error(error instanceof Error ? error.message : '角色详情加载失败');
   } finally {
-    detailLoading.value = false;
+    if (requestToken === detailRequestToken) {
+      detailLoading.value = false;
+    }
   }
+}
+
+function filterMenuTree(nodes: MenuTreeNode[], menuIds: Set<MenuId>): MenuTreeNode[] {
+  return nodes.flatMap((node) => {
+    const children = filterMenuTree(node.children ?? [], menuIds);
+
+    if (!menuIds.has(node.id) && children.length === 0) {
+      return [];
+    }
+
+    return [{ ...node, children }];
+  });
 }
 
 onMounted(loadRoles);
@@ -280,12 +351,35 @@ onMounted(loadRoles);
             </div>
           </dl>
 
-          <div class="permission-reserved">
+          <div class="permission-panel">
             <div class="permission-head">
-              <Info :size="16" />
+              <ListTree :size="16" />
               <strong>菜单权限</strong>
+              <span class="permission-count">{{ selectedMenuCount }} 项</span>
             </div>
-            <p>角色绑定菜单权限点的查询接口暂未开放，此处已预留，待后端接口完成后接入。</p>
+            <el-tree
+              class="permission-tree"
+              :data="selectedMenuTree"
+              node-key="id"
+              :props="menuTreeProps"
+              default-expand-all
+              :expand-on-click-node="false"
+              empty-text="暂未绑定菜单权限"
+            >
+              <template #default="{ data }">
+                <div class="menu-node">
+                  <span class="menu-name">{{ data.menuName }}</span>
+                  <el-tag
+                    class="menu-type"
+                    size="small"
+                    effect="light"
+                    :type="getMenuTypeTagType(data.menuType)"
+                  >
+                    {{ getMenuTypeLabel(data.menuType) }}
+                  </el-tag>
+                </div>
+              </template>
+            </el-tree>
           </div>
         </template>
       </div>
@@ -494,10 +588,10 @@ onMounted(loadRoles);
   overflow-wrap: anywhere;
 }
 
-.permission-reserved {
+.permission-panel {
   margin-top: 18px;
   padding: 16px;
-  border: 1px dashed rgba(56, 102, 242, 0.32);
+  border: 1px solid var(--ez-line);
   border-radius: 12px;
   background: #f8faff;
 }
@@ -509,11 +603,43 @@ onMounted(loadRoles);
   color: var(--ez-primary-dark);
 }
 
-.permission-reserved p {
-  margin: 8px 0 0;
+.permission-count {
+  margin-left: auto;
   color: var(--ez-muted);
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: 12px;
+}
+
+.permission-tree {
+  margin-top: 12px;
+  padding-right: 4px;
+  max-height: 300px;
+  overflow: auto;
+}
+
+.permission-tree :deep(.el-tree-node__content) {
+  height: 32px;
+  border-radius: 7px;
+}
+
+.menu-node {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  padding-right: 4px;
+}
+
+.menu-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-type {
+  flex-shrink: 0;
 }
 
 @media (max-width: 760px) {
