@@ -1,5 +1,12 @@
 import { requestJson } from '@/api/client';
-import type { Page, RolePageQuery, RolePageItem, RoleInfo, RoleId } from '@/types/api';
+import type {
+  Page,
+  RolePageQuery,
+  RolePageItem,
+  RoleInfo,
+  RoleId,
+  RoleCreatePayload,
+} from '@/types/api';
 
 export const sysRoleApi = {
   page(params: RolePageQuery) {
@@ -13,6 +20,13 @@ export const sysRoleApi = {
     return requestJson<RoleInfo>({
       url: `/admin/sys/role/${id}`,
       method: 'get',
+    });
+  },
+  add(payload: RoleCreatePayload) {
+    return requestJson<null>({
+      url: '/admin/sys/role/add',
+      method: 'post',
+      data: payload,
     });
   },
 };
