@@ -305,16 +305,24 @@ async function handleRoleUpdated(roleId: RoleId) {
             {{ formatDateTime(row.createTime) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160" fixed="right">
+        <el-table-column
+          label="操作"
+          width="180"
+          align="center"
+          header-align="center"
+          fixed="right"
+        >
           <template #default="{ row }">
-            <button class="table-action" type="button" @click.stop="openDetail(row)">
-              <Eye :size="15" />
-              详情
-            </button>
-            <button class="table-action" type="button" @click.stop="openEditor(row.id)">
-              <Pencil :size="15" />
-              编辑
-            </button>
+            <div class="action-grid">
+              <button class="table-action" type="button" @click.stop="openDetail(row)">
+                <Eye :size="15" />
+                <span>详情</span>
+              </button>
+              <button class="table-action" type="button" @click.stop="openEditor(row.id)">
+                <Pencil :size="15" />
+                <span>编辑</span>
+              </button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -562,8 +570,19 @@ async function handleRoleUpdated(roleId: RoleId) {
   background: #f5f8ff;
 }
 
-.table-action + .table-action {
-  margin-left: 8px;
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 6px 8px;
+  justify-content: center;
+}
+
+.action-grid .table-action:first-child {
+  transform: translateX(4px);
+}
+
+.action-grid .table-action:last-child {
+  transform: translateX(-4px);
 }
 
 .detail-body {

@@ -458,34 +458,42 @@ onMounted(loadUsers);
             {{ formatDateTime(row.createTime) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="310" fixed="right">
+        <el-table-column
+          label="操作"
+          width="180"
+          align="center"
+          header-align="center"
+          fixed="right"
+        >
           <template #default="{ row }">
-            <button class="table-action" type="button" @click.stop="openDetail(row)">
-              <Eye :size="15" />
-              详情
-            </button>
-            <button class="table-action" type="button" @click.stop="openEditor(row.id)">
-              <Pencil :size="15" />
-              编辑
-            </button>
-            <button
-              class="table-action status-action"
-              type="button"
-              :disabled="statusUpdatingId === row.id || deleting"
-              @click.stop="changeUserStatus(row, row.status === 1 ? 0 : 1)"
-            >
-              <Power :size="15" />
-              {{ row.status === 1 ? '禁用' : '启用' }}
-            </button>
-            <button
-              class="table-action delete-action"
-              type="button"
-              :disabled="deleting"
-              @click.stop="confirmDeleteUsers([row])"
-            >
-              <Trash2 :size="15" />
-              删除
-            </button>
+            <div class="action-grid">
+              <button class="table-action" type="button" @click.stop="openDetail(row)">
+                <Eye :size="15" />
+                <span>详情</span>
+              </button>
+              <button class="table-action" type="button" @click.stop="openEditor(row.id)">
+                <Pencil :size="15" />
+                <span>编辑</span>
+              </button>
+              <button
+                class="table-action status-action"
+                type="button"
+                :disabled="statusUpdatingId === row.id || deleting"
+                @click.stop="changeUserStatus(row, row.status === 1 ? 0 : 1)"
+              >
+                <Power :size="15" />
+                <span>{{ row.status === 1 ? '禁用' : '启用' }}</span>
+              </button>
+              <button
+                class="table-action delete-action"
+                type="button"
+                :disabled="deleting"
+                @click.stop="confirmDeleteUsers([row])"
+              >
+                <Trash2 :size="15" />
+                <span>删除</span>
+              </button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -756,14 +764,20 @@ onMounted(loadUsers);
   background: #f5f8ff;
 }
 
-.table-action.delete-action {
-  color: #d2494a;
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 6px 8px;
+  justify-content: center;
+  transform: translateX(-8px);
 }
 
-.table-action.delete-action:hover:not(:disabled) {
-  border-color: rgba(210, 73, 74, 0.38);
-  color: #d2494a;
-  background: #fff5f5;
+.action-grid .table-action:nth-child(-n + 2) {
+  transform: translateX(4px);
+}
+
+.action-grid .table-action:nth-child(n + 3) {
+  transform: translateX(-4px);
 }
 
 .table-action.status-action {
@@ -776,13 +790,19 @@ onMounted(loadUsers);
   background: #fff8e6;
 }
 
+.table-action.delete-action {
+  color: #d2494a;
+}
+
+.table-action.delete-action:hover:not(:disabled) {
+  border-color: rgba(210, 73, 74, 0.38);
+  color: #d2494a;
+  background: #fff5f5;
+}
+
 .table-action:disabled {
   opacity: 0.55;
   cursor: not-allowed;
-}
-
-.table-action + .table-action {
-  margin-left: 8px;
 }
 
 .detail-body {
