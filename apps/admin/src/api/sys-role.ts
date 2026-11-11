@@ -6,6 +6,7 @@ import type {
   RoleInfo,
   RoleId,
   RoleCreatePayload,
+  RoleUpdatePayload,
 } from '@/types/api';
 
 export const sysRoleApi = {
@@ -26,6 +27,13 @@ export const sysRoleApi = {
     return requestJson<null>({
       url: '/admin/sys/role/add',
       method: 'post',
+      data: payload,
+    });
+  },
+  update(payload: RoleUpdatePayload) {
+    return requestJson<null>({
+      url: '/admin/sys/role/update',
+      method: 'put',
       data: payload,
     });
   },
