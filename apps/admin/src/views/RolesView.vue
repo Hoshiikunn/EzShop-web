@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Eye, ListTree, Plus, RefreshCw, Search } from 'lucide-vue-next';
+import { Eye, ListTree, Pencil, Plus, RefreshCw, Search } from 'lucide-vue-next';
 import { sysRoleApi } from '@/api/sys-role';
 import { sysMenuApi } from '@/api/sys-menu';
 import type {
@@ -11,9 +11,11 @@ import type {
   RolePageItem,
   RoleInfo,
   RolePageQuery,
+  RoleId,
 } from '@/types/api';
 import { formatDateTime } from '@/utils/format';
 import AddRoleDrawer from '@/components/AddRoleDrawer.vue';
+import EditRoleDrawer from '@/components/EditRoleDrawer.vue';
 
 const roles = ref<RolePageItem[]>([]);
 const total = ref(0);
@@ -23,6 +25,8 @@ const drawerVisible = ref(false);
 const detail = ref<RoleInfo | null>(null);
 const menuTree = ref<MenuTreeNode[]>([]);
 const addRoleVisible = ref(false);
+const editRoleVisible = ref(false);
+const editRoleId = ref<RoleId | null>(null);
 
 const menuTreeProps = {
   label: 'menuName',
@@ -190,6 +194,23 @@ function filterMenuTree(nodes: MenuTreeNode[], menuIds: Set<MenuId>): MenuTreeNo
 }
 
 onMounted(loadRoles);
+
+function openEditor(roleId: RoleId) {
+  editRoleId.value = roleId;
+  editRoleVisible.value = true;
+}
+
+async function handleRoleUpdated(roleId: RoleId) {
+  await loadRoles();
+
+  if (drawerVisible.value && detail.value?.id === roleId) {
+    try {
+      detail.value = await sysRoleApi.info(roleId);
+    } catch (error) {
+      ElMessage.error(error instanceof Error ? error.message : '角色详情刷新失败');
+    }
+  }
+}
 </script>
 
 <template>
@@ -284,11 +305,15 @@ onMounted(loadRoles);
             {{ formatDateTime(row.createTime) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100" fixed="right">
+        <el-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
             <button class="table-action" type="button" @click.stop="openDetail(row)">
               <Eye :size="15" />
               详情
+            </button>
+            <button class="table-action" type="button" @click.stop="openEditor(row.id)">
+              <Pencil :size="15" />
+              编辑
             </button>
           </template>
         </el-table-column>
@@ -318,6 +343,13 @@ onMounted(loadRoles);
               <strong>{{ detail.roleName }}</strong>
               <span>{{ detail.roleKey }}</span>
             </div>
+          </div>
+
+          <div class="detail-actions">
+            <button class="detail-action-button" type="button" @click="openEditor(detail.id)">
+              <Pencil :size="15" />
+              编辑
+            </button>
           </div>
 
           <dl class="detail-list">
@@ -386,6 +418,7 @@ onMounted(loadRoles);
     </el-drawer>
 
     <AddRoleDrawer v-model="addRoleVisible" @created="loadRoles" />
+    <EditRoleDrawer v-model="editRoleVisible" :role-id="editRoleId" @updated="handleRoleUpdated" />
   </section>
 </template>
 
@@ -529,6 +562,10 @@ onMounted(loadRoles);
   background: #f5f8ff;
 }
 
+.table-action + .table-action {
+  margin-left: 8px;
+}
+
 .detail-body {
   min-height: 420px;
 }
@@ -538,6 +575,32 @@ onMounted(loadRoles);
   align-items: center;
   gap: 14px;
   padding-bottom: 20px;
+}
+
+.detail-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-bottom: 18px;
+}
+
+.detail-action-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--ez-line);
+  border-radius: 7px;
+  color: var(--ez-primary-dark);
+  background: #fff;
+  cursor: pointer;
+}
+
+.detail-action-button:hover {
+  border-color: rgba(56, 102, 242, 0.38);
+  background: #f5f8ff;
 }
 
 .detail-avatar {

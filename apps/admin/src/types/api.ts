@@ -122,6 +122,10 @@ export interface RoleCreatePayload {
   menuIds?: MenuId[];
 }
 
+export interface RoleUpdatePayload extends Omit<RoleCreatePayload, 'roleKey'> {
+  id: RoleId;
+}
+
 export interface RoleInfo extends RolePageItem {
   menuIds?: MenuId[];
 }
