@@ -126,6 +126,10 @@ export interface RoleUpdatePayload extends Omit<RoleCreatePayload, 'roleKey'> {
   id: RoleId;
 }
 
+export interface RoleDeleteQuery {
+  force?: boolean;
+}
+
 export interface RoleInfo extends RolePageItem {
   menuIds?: MenuId[];
 }

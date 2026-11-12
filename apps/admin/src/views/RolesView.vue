@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
-import { ElMessage } from 'element-plus';
-import { Eye, ListTree, Pencil, Plus, RefreshCw, Search } from 'lucide-vue-next';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { Eye, ListTree, Pencil, Plus, RefreshCw, Search, Trash2 } from 'lucide-vue-next';
+import { ApiError } from '@/api/client';
 import { sysRoleApi } from '@/api/sys-role';
 import { sysMenuApi } from '@/api/sys-menu';
 import type {
@@ -27,6 +28,9 @@ const menuTree = ref<MenuTreeNode[]>([]);
 const addRoleVisible = ref(false);
 const editRoleVisible = ref(false);
 const editRoleId = ref<RoleId | null>(null);
+const deletingRoleId = ref<RoleId | null>(null);
+
+const ROLE_HAS_USERS_CODE = 103004;
 
 const menuTreeProps = {
   label: 'menuName',
@@ -181,6 +185,73 @@ async function openDetail(row: RolePageItem) {
   }
 }
 
+async function deleteRole(role: RolePageItem | RoleInfo, force = false) {
+  if (deletingRoleId.value) {
+    return;
+  }
+
+  if (!force) {
+    try {
+      await ElMessageBox.confirm(
+        `确定要删除角色「${role.roleName}」吗？删除后不可恢复。`,
+        '删除角色',
+        {
+          confirmButtonText: '删除',
+          cancelButtonText: '取消',
+          type: 'warning',
+        },
+      );
+    } catch {
+      return;
+    }
+  }
+
+  deletingRoleId.value = role.id;
+
+  try {
+    await sysRoleApi.remove(role.id, { force });
+    ElMessage.success('角色已删除');
+
+    if (drawerVisible.value && detail.value?.id === role.id) {
+      drawerVisible.value = false;
+      detail.value = null;
+    }
+
+    await loadRoles();
+
+    const pageCount = Math.max(1, Math.ceil(total.value / pagination.size));
+
+    if (pagination.current > pageCount) {
+      pagination.current = pageCount;
+      await loadRoles();
+    }
+  } catch (error) {
+    if (error instanceof ApiError && error.code === ROLE_HAS_USERS_CODE) {
+      try {
+        await ElMessageBox.confirm(
+          `${error.message} 强制删除将同时解除用户与该角色的绑定。`,
+          '强制删除角色',
+          {
+            confirmButtonText: '强制删除',
+            cancelButtonText: '取消',
+            type: 'warning',
+          },
+        );
+      } catch {
+        return;
+      }
+
+      deletingRoleId.value = null;
+      await deleteRole(role, true);
+      return;
+    }
+
+    ElMessage.error(error instanceof Error ? error.message : '角色删除失败');
+  } finally {
+    deletingRoleId.value = null;
+  }
+}
+
 function filterMenuTree(nodes: MenuTreeNode[], menuIds: Set<MenuId>): MenuTreeNode[] {
   return nodes.flatMap((node) => {
     const children = filterMenuTree(node.children ?? [], menuIds);
@@ -307,7 +378,7 @@ async function handleRoleUpdated(roleId: RoleId) {
         </el-table-column>
         <el-table-column
           label="操作"
-          width="180"
+          width="200"
           align="center"
           header-align="center"
           fixed="right"
@@ -321,6 +392,15 @@ async function handleRoleUpdated(roleId: RoleId) {
               <button class="table-action" type="button" @click.stop="openEditor(row.id)">
                 <Pencil :size="15" />
                 <span>编辑</span>
+              </button>
+              <button
+                class="table-action delete-action"
+                type="button"
+                :disabled="deletingRoleId === row.id"
+                @click.stop="deleteRole(row)"
+              >
+                <Trash2 :size="15" />
+                <span>删除</span>
               </button>
             </div>
           </template>
@@ -357,6 +437,15 @@ async function handleRoleUpdated(roleId: RoleId) {
             <button class="detail-action-button" type="button" @click="openEditor(detail.id)">
               <Pencil :size="15" />
               编辑
+            </button>
+            <button
+              class="detail-action-button delete-action"
+              type="button"
+              :disabled="deletingRoleId === detail.id"
+              @click="deleteRole(detail)"
+            >
+              <Trash2 :size="15" />
+              删除
             </button>
           </div>
 
@@ -570,6 +659,21 @@ async function handleRoleUpdated(roleId: RoleId) {
   background: #f5f8ff;
 }
 
+.table-action.delete-action {
+  color: #d2494a;
+}
+
+.table-action.delete-action:hover:not(:disabled) {
+  border-color: rgba(210, 73, 74, 0.38);
+  color: #d2494a;
+  background: #fff5f5;
+}
+
+.table-action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .action-grid {
   display: grid;
   grid-template-columns: repeat(2, auto);
@@ -620,6 +724,21 @@ async function handleRoleUpdated(roleId: RoleId) {
 .detail-action-button:hover {
   border-color: rgba(56, 102, 242, 0.38);
   background: #f5f8ff;
+}
+
+.detail-action-button.delete-action {
+  color: #d2494a;
+}
+
+.detail-action-button.delete-action:hover:not(:disabled) {
+  border-color: rgba(210, 73, 74, 0.38);
+  color: #d2494a;
+  background: #fff5f5;
+}
+
+.detail-action-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .detail-avatar {
