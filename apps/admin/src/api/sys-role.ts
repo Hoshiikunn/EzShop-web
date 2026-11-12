@@ -7,6 +7,7 @@ import type {
   RoleId,
   RoleCreatePayload,
   RoleUpdatePayload,
+  RoleDeleteQuery,
 } from '@/types/api';
 
 export const sysRoleApi = {
@@ -35,6 +36,13 @@ export const sysRoleApi = {
       url: '/admin/sys/role/update',
       method: 'put',
       data: payload,
+    });
+  },
+  remove(id: RoleId, query: RoleDeleteQuery = {}) {
+    return requestJson<null>({
+      url: `/admin/sys/role/${id}`,
+      method: 'delete',
+      params: query,
     });
   },
 };
