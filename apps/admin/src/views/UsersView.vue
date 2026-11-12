@@ -220,15 +220,15 @@ function buildDeleteConfirmMessage(users: UserPageItem[]): string {
   if (users.length === 1) {
     const user = users[0];
 
-    return `确定要删除用户「${user.realName || user.username}」吗？删除后不可从本系统恢复。`;
+    return `确定要删除用户「${user.username}」吗？删除后不可从本系统恢复。`;
   }
 
-  const previewNames = users
+  const previewUsernames = users
     .slice(0, 3)
-    .map((user) => user.realName || user.username)
+    .map((user) => user.username)
     .join('、');
 
-  return `确定要删除 ${previewNames} 等 ${users.length} 个用户吗？删除后不可从本系统恢复。`;
+  return `确定要删除 ${previewUsernames} 等 ${users.length} 个用户吗？删除后不可从本系统恢复。`;
 }
 
 async function confirmDeleteUsers(users: UserPageItem[]) {

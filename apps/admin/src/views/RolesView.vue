@@ -13,6 +13,8 @@ import type {
   RoleInfo,
   RolePageQuery,
   RoleId,
+  RoleStatus,
+  RoleStatusPayload,
 } from '@/types/api';
 import { formatDateTime } from '@/utils/format';
 import AddRoleDrawer from '@/components/AddRoleDrawer.vue';
@@ -29,6 +31,7 @@ const addRoleVisible = ref(false);
 const editRoleVisible = ref(false);
 const editRoleId = ref<RoleId | null>(null);
 const deletingRoleId = ref<RoleId | null>(null);
+const statusChangingId = ref<RoleId | null>(null);
 
 const ROLE_HAS_USERS_CODE = 103004;
 
@@ -182,6 +185,54 @@ async function openDetail(row: RolePageItem) {
     if (requestToken === detailRequestToken) {
       detailLoading.value = false;
     }
+  }
+}
+
+async function beforeRoleStatusChange(role: RolePageItem | RoleInfo): Promise<boolean> {
+  if (statusChangingId.value) {
+    return false;
+  }
+
+  const status: RoleStatus = role.status === 1 ? 0 : 1;
+
+  if (status === 0) {
+    try {
+      await ElMessageBox.confirm(
+        `确定要禁用角色「${role.roleName}」吗？禁用后，普通账号将不再装载该角色的权限。`,
+        '禁用角色',
+        {
+          confirmButtonText: '禁用',
+          cancelButtonText: '取消',
+          type: 'warning',
+        },
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+async function changeRoleStatus(role: RolePageItem | RoleInfo, status: RoleStatus) {
+  if (statusChangingId.value) {
+    return;
+  }
+
+  statusChangingId.value = role.id;
+
+  try {
+    await sysRoleApi.changeStatus({ id: role.id, status } satisfies RoleStatusPayload);
+    ElMessage.success(status === 1 ? '角色已启用' : '角色已禁用');
+    await loadRoles();
+
+    if (drawerVisible.value && detail.value?.id === role.id) {
+      detail.value = await sysRoleApi.info(role.id);
+    }
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '角色状态变更失败');
+  } finally {
+    statusChangingId.value = null;
   }
 }
 
@@ -363,11 +414,20 @@ async function handleRoleUpdated(roleId: RoleId) {
           </template>
         </el-table-column>
         <el-table-column prop="sort" label="排序" width="80" />
-        <el-table-column label="状态" width="100">
+        <el-table-column label="状态" width="130" align="center" header-align="center">
           <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'danger'" effect="light">
-              {{ row.status === 1 ? '启用' : '禁用' }}
-            </el-tag>
+            <div class="status-cell" @click.stop>
+              <el-switch
+                :model-value="row.status"
+                :active-value="1"
+                :inactive-value="0"
+                class="role-status-switch"
+                :before-change="() => beforeRoleStatusChange(row)"
+                :loading="statusChangingId === row.id"
+                :disabled="statusChangingId === row.id || deletingRoleId === row.id"
+                @change="(value) => changeRoleStatus(row, Number(value) as RoleStatus)"
+              />
+            </div>
           </template>
         </el-table-column>
         <el-table-column prop="remark" label="备注" min-width="180" show-overflow-tooltip />
@@ -633,6 +693,18 @@ async function handleRoleUpdated(roleId: RoleId) {
   color: var(--ez-primary-dark);
   background: #f0f4ff;
   font-size: 12px;
+}
+
+.status-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.role-status-switch {
+  --el-switch-on-color: #22c55e;
+  --el-switch-off-color: #ef4444;
 }
 
 .pagination-row {
