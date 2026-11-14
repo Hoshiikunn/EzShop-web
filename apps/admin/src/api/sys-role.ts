@@ -5,6 +5,7 @@ import type {
   RolePageItem,
   RoleInfo,
   RoleId,
+  RoleListItem,
   RoleCreatePayload,
   RoleUpdatePayload,
   RoleDeleteQuery,
@@ -22,6 +23,12 @@ export const sysRoleApi = {
   info(id: RoleId) {
     return requestJson<RoleInfo>({
       url: `/admin/sys/role/${id}`,
+      method: 'get',
+    });
+  },
+  list() {
+    return requestJson<RoleListItem[]>({
+      url: '/admin/sys/role/list',
       method: 'get',
     });
   },

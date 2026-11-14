@@ -64,6 +64,7 @@ export interface UserInfo extends UserPageItem {
   lastLoginIp?: string;
   lastLoginTime?: string;
   updateTime?: string;
+  roles?: RoleBriefItem[];
 }
 
 export interface UserCreatePayload {
@@ -73,6 +74,7 @@ export interface UserCreatePayload {
   avatarUrl?: string;
   mobile?: string;
   email?: string;
+  roleIds?: RoleId[];
 }
 
 export interface UserUpdatePayload extends UserCreatePayload {
@@ -112,6 +114,13 @@ export interface RolePageItem {
   remark?: string;
   createTime?: string;
   updateTime?: string;
+}
+
+export type RoleListItem = RolePageItem;
+
+export interface RoleBriefItem {
+  id: RoleId;
+  roleName: string;
 }
 
 export interface RoleCreatePayload {
