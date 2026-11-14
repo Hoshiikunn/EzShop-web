@@ -2,7 +2,15 @@
 import { reactive, ref, watch } from 'vue';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import { sysUserApi } from '@/api/sys-user';
-import type { Gender, UserUpdatePayload, UserId } from '@/types/api';
+import { sysRoleApi } from '@/api/sys-role';
+import type {
+  Gender,
+  RoleBriefItem,
+  RoleId,
+  RoleListItem,
+  UserUpdatePayload,
+  UserId,
+} from '@/types/api';
 import AvatarFileInput from '@/components/AvatarFileInput.vue';
 
 const props = defineProps<{
@@ -23,9 +31,11 @@ const formRef = ref<FormInstance>();
 const loading = ref(false);
 const submitting = ref(false);
 const avatarFile = ref<File | null>(null);
+const roleOptions = ref<RoleListItem[]>([]);
 
 type EditUserForm = Omit<UserUpdatePayload, 'avatarUrl'> & {
   avatarUrl: string;
+  roleIds: RoleId[];
 };
 
 const form = reactive<EditUserForm>({
@@ -36,6 +46,7 @@ const form = reactive<EditUserForm>({
   avatarUrl: '',
   mobile: '',
   email: '',
+  roleIds: [],
 });
 
 const rules: FormRules<UserUpdatePayload> = {
@@ -74,6 +85,7 @@ function resetForm() {
   form.avatarUrl = '';
   form.mobile = '';
   form.email = '';
+  form.roleIds = [];
   avatarFile.value = null;
   void formRef.value?.clearValidate();
 }
@@ -86,6 +98,7 @@ function fillForm(user: {
   avatarUrl?: string;
   mobile?: string;
   email?: string;
+  roles?: RoleBriefItem[];
 }) {
   form.id = user.id;
   form.username = user.username;
@@ -94,6 +107,7 @@ function fillForm(user: {
   form.avatarUrl = user.avatarUrl ?? '';
   form.mobile = user.mobile ?? '';
   form.email = user.email ?? '';
+  form.roleIds = user.roles?.map((role) => role.id) ?? [];
   void formRef.value?.clearValidate();
 }
 
@@ -112,6 +126,7 @@ function buildPayload(): UserUpdatePayload {
     avatarUrl: form.avatarUrl.trim(),
     mobile: form.mobile.trim(),
     email: form.email.trim(),
+    roleIds: form.roleIds,
   };
 }
 
@@ -119,22 +134,35 @@ async function loadUser(userId: UserId) {
   const requestToken = ++loadUserToken;
   loading.value = true;
   avatarFile.value = null;
+  roleOptions.value = [];
 
   try {
-    const user = await sysUserApi.info(userId);
+    const [userResult, roleResult] = await Promise.allSettled([
+      sysUserApi.info(userId),
+      sysRoleApi.list(),
+    ]);
 
     if (requestToken !== loadUserToken) {
       return;
     }
 
-    fillForm(user);
-  } catch (error) {
-    if (requestToken !== loadUserToken) {
+    if (userResult.status === 'rejected') {
+      visible.value = false;
+      ElMessage.error(
+        userResult.reason instanceof Error ? userResult.reason.message : '用户详情加载失败',
+      );
       return;
     }
 
-    visible.value = false;
-    ElMessage.error(error instanceof Error ? error.message : '用户详情加载失败');
+    fillForm(userResult.value);
+
+    if (roleResult.status === 'rejected') {
+      ElMessage.error(
+        roleResult.reason instanceof Error ? roleResult.reason.message : '角色列表加载失败',
+      );
+    } else {
+      roleOptions.value = roleResult.value;
+    }
   } finally {
     if (requestToken === loadUserToken) {
       loading.value = false;
@@ -229,6 +257,30 @@ watch(
           <el-input v-model="form.email" maxlength="100" placeholder="选填，请输入邮箱" />
         </el-form-item>
 
+        <el-form-item label="角色" prop="roleIds">
+          <el-select
+            v-model="form.roleIds"
+            class="role-select"
+            multiple
+            clearable
+            placeholder="请选择角色"
+          >
+            <el-option
+              v-for="role in roleOptions"
+              :key="role.id"
+              :value="role.id"
+              :label="role.roleName"
+            >
+              <div class="role-option">
+                <span>{{ role.roleName }}</span>
+                <el-tag v-if="role.status === 0" size="small" type="danger" effect="light">
+                  禁用
+                </el-tag>
+              </div>
+            </el-option>
+          </el-select>
+        </el-form-item>
+
         <div class="form-actions">
           <button class="ghost-button" type="button" @click="visible = false">取消</button>
           <button class="primary-button" type="submit" :disabled="submitting || loading">
@@ -248,6 +300,17 @@ watch(
 .edit-form {
   display: grid;
   gap: 4px;
+}
+
+.role-select {
+  width: 100%;
+}
+
+.role-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .ghost-button,

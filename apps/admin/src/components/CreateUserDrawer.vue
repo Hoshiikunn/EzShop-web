@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { nextTick, reactive, ref, watch } from 'vue';
+import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import { Copy, RotateCcw } from 'lucide-vue-next';
 import { sysUserApi } from '@/api/sys-user';
+import { sysRoleApi } from '@/api/sys-role';
 import AvatarFileInput from '@/components/AvatarFileInput.vue';
-import type { Gender, UserCreatePayload, UserInitInfo } from '@/types/api';
+import type { Gender, RoleId, RoleListItem, UserCreatePayload, UserInitInfo } from '@/types/api';
 
 const visible = defineModel<boolean>({
   required: true,
@@ -18,15 +19,21 @@ const formRef = ref<FormInstance>();
 const submitting = ref(false);
 const createdUser = ref<UserInitInfo | null>(null);
 const avatarFile = ref<File | null>(null);
+const roleOptions = ref<RoleListItem[]>([]);
+const roleLoading = ref(false);
+
+const enabledRoles = computed(() => roleOptions.value.filter((role) => role.status === 1));
 
 type CreateUserForm = Omit<UserCreatePayload, 'avatarUrl' | 'gender'> & {
   gender: Gender | undefined;
+  roleIds: RoleId[];
 };
 
 const form = reactive<CreateUserForm>({
   username: '',
   realName: '',
   gender: undefined,
+  roleIds: [],
   mobile: '',
   email: '',
 });
@@ -76,6 +83,7 @@ function buildPayload(): UserCreatePayload {
     gender,
     mobile: form.mobile.trim() || undefined,
     email: form.email.trim() || undefined,
+    ...(form.roleIds.length > 0 ? { roleIds: form.roleIds } : {}),
   };
 }
 
@@ -83,6 +91,7 @@ function resetForm() {
   form.username = '';
   form.realName = '';
   form.gender = undefined;
+  form.roleIds = [];
   form.mobile = '';
   form.email = '';
   removeAvatarFile();
@@ -129,8 +138,23 @@ async function submitForm() {
   }
 }
 
+async function loadRoleOptions() {
+  roleLoading.value = true;
+
+  try {
+    roleOptions.value = await sysRoleApi.list();
+  } catch (error) {
+    roleOptions.value = [];
+    ElMessage.error(error instanceof Error ? error.message : '角色列表加载失败');
+  } finally {
+    roleLoading.value = false;
+  }
+}
+
 watch(visible, (value) => {
-  if (!value) {
+  if (value) {
+    void loadRoleOptions();
+  } else {
     resetForm();
   }
 });
@@ -215,6 +239,24 @@ watch(visible, (value) => {
           <el-input v-model="form.email" maxlength="100" placeholder="选填，请输入邮箱" />
         </el-form-item>
 
+        <el-form-item label="角色" prop="roleIds">
+          <el-select
+            v-model="form.roleIds"
+            class="role-select"
+            multiple
+            clearable
+            :loading="roleLoading"
+            placeholder="选填，请选择角色"
+          >
+            <el-option
+              v-for="role in enabledRoles"
+              :key="role.id"
+              :value="role.id"
+              :label="role.roleName"
+            />
+          </el-select>
+        </el-form-item>
+
         <div class="form-actions">
           <button class="ghost-button" type="button" @click="visible = false">取消</button>
           <button class="primary-button" type="submit" :disabled="submitting">
@@ -231,6 +273,10 @@ watch(visible, (value) => {
   display: grid;
   align-content: start;
   gap: 20px;
+}
+
+.role-select {
+  width: 100%;
 }
 
 .ghost-button,

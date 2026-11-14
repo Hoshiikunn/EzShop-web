@@ -571,6 +571,17 @@ onMounted(loadUsers);
               <dd>{{ detail.status === 1 ? '启用' : '禁用' }}</dd>
             </div>
             <div>
+              <dt>角色</dt>
+              <dd>
+                <span v-if="!detail.roles?.length">-</span>
+                <span v-else class="detail-roles">
+                  <el-tag v-for="role in detail.roles" :key="role.id" effect="light">
+                    {{ role.roleName }}
+                  </el-tag>
+                </span>
+              </dd>
+            </div>
+            <div>
               <dt>超级管理员</dt>
               <dd>{{ detail.isSuperAdmin === 1 ? '是' : '否' }}</dd>
             </div>
@@ -918,6 +929,12 @@ onMounted(loadUsers);
   margin: 0;
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+.detail-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 @media (max-width: 760px) {
