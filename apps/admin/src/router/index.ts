@@ -33,6 +33,12 @@ const router = createRouter({
           component: () => import('@/views/RolesView.vue'),
           meta: { title: '角色管理' },
         },
+        {
+          path: 'menus',
+          name: 'menus',
+          component: () => import('@/views/MenusView.vue'),
+          meta: { title: '菜单管理' },
+        },
       ],
     },
     {

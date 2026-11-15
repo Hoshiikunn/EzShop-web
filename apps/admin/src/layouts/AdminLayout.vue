@@ -2,7 +2,15 @@
 import { computed } from 'vue';
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { LayoutDashboard, Menu, Settings, ShieldCheck, Users, LogOut } from 'lucide-vue-next';
+import {
+  LayoutDashboard,
+  ListTree,
+  Menu,
+  Settings,
+  ShieldCheck,
+  Users,
+  LogOut,
+} from 'lucide-vue-next';
 import { useAuthStore } from '@/stores/auth';
 
 const route = useRoute();
@@ -14,6 +22,7 @@ const navigation = [
   { path: '/dashboard', title: '仪表盘', icon: LayoutDashboard },
   { path: '/users', title: '用户管理', icon: Users },
   { path: '/roles', title: '角色管理', icon: ShieldCheck },
+  { path: '/menus', title: '菜单管理', icon: ListTree },
 ];
 
 const activePath = computed(() => route.path);

@@ -162,3 +162,23 @@ export interface MenuTreeNode {
   status?: 0 | 1;
   children: MenuTreeNode[];
 }
+
+export interface MenuItem {
+  id: MenuId;
+  pid: MenuId;
+  menuName: string;
+  menuType: MenuType;
+  path?: string;
+  component?: string;
+  perms?: string;
+  icon?: string;
+  sort?: number;
+  visible: 0 | 1;
+  status: 0 | 1;
+}
+
+export interface MenuInfo extends MenuItem {
+  openStyle: 0 | 1;
+  createTime?: string;
+  updateTime?: string;
+}
