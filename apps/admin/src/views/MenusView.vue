@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Eye } from 'lucide-vue-next';
+import { Eye, Plus } from 'lucide-vue-next';
 import { sysMenuApi } from '@/api/sys-menu';
 import type { MenuInfo, MenuItem, MenuType } from '@/types/api';
 import { formatDateTime } from '@/utils/format';
+import { loadMenuIconOptions, resolveMenuIcon } from '@/utils/menu-icons';
+import AddMenuDrawer from '@/components/AddMenuDrawer.vue';
 
 const menus = ref<MenuItem[]>([]);
 const tableLoading = ref(false);
 const drawerVisible = ref(false);
 const detailLoading = ref(false);
 const detail = ref<MenuInfo | null>(null);
+const addMenuVisible = ref(false);
 
 const menuTypeLabels: Record<MenuType, string> = {
   M: '目录',
@@ -103,7 +106,10 @@ async function openDetail(row: MenuItem) {
   }
 }
 
-onMounted(loadMenus);
+onMounted(() => {
+  void loadMenus();
+  void loadMenuIconOptions().catch(() => undefined);
+});
 </script>
 
 <template>
@@ -111,6 +117,12 @@ onMounted(loadMenus);
     <div class="panel table-panel">
       <div class="table-header">
         <h2>菜单列表</h2>
+        <div class="header-actions">
+          <button class="create-button" type="button" @click="addMenuVisible = true">
+            <Plus :size="16" />
+            添加菜单
+          </button>
+        </div>
       </div>
 
       <el-table
@@ -125,7 +137,18 @@ onMounted(loadMenus);
         <template #empty>
           <el-empty description="暂无菜单" :image-size="72" />
         </template>
-        <el-table-column prop="menuName" label="菜单名称" min-width="180" show-overflow-tooltip />
+        <el-table-column label="菜单名称" min-width="180" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span class="menu-name-cell">
+              <component
+                v-if="resolveMenuIcon(row.icon)"
+                :is="resolveMenuIcon(row.icon)"
+                :size="15"
+              />
+              {{ row.menuName }}
+            </span>
+          </template>
+        </el-table-column>
         <el-table-column label="菜单类型" width="90" align="center">
           <template #default="{ row }">
             <el-tag size="small" effect="light" :type="getMenuTypeTagType(row.menuType)">
@@ -140,13 +163,6 @@ onMounted(loadMenus);
           <template #default="{ row }">
             <el-tag :type="row.visible === 0 ? 'info' : 'primary'" effect="light">
               {{ row.visible === 0 ? '隐藏' : '显示' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" width="90" align="center">
-          <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'danger'" effect="light">
-              {{ row.status === 1 ? '启用' : '禁用' }}
             </el-tag>
           </template>
         </el-table-column>
@@ -211,7 +227,17 @@ onMounted(loadMenus);
             </div>
             <div>
               <dt>图标</dt>
-              <dd>{{ detail.icon || '-' }}</dd>
+              <dd>
+                <span v-if="detail.icon" class="icon-display">
+                  <component
+                    v-if="resolveMenuIcon(detail.icon)"
+                    :is="resolveMenuIcon(detail.icon)"
+                    :size="16"
+                  />
+                  <span>{{ detail.icon }}</span>
+                </span>
+                <span v-else>-</span>
+              </dd>
             </div>
             <div>
               <dt>排序</dt>
@@ -226,10 +252,6 @@ onMounted(loadMenus);
               <dd>{{ detail.openStyle === 1 ? '外部' : '内部' }}</dd>
             </div>
             <div>
-              <dt>状态</dt>
-              <dd>{{ detail.status === 1 ? '启用' : '禁用' }}</dd>
-            </div>
-            <div>
               <dt>创建时间</dt>
               <dd>{{ formatDateTime(detail.createTime) }}</dd>
             </div>
@@ -241,6 +263,8 @@ onMounted(loadMenus);
         </template>
       </div>
     </el-drawer>
+
+    <AddMenuDrawer v-model="addMenuVisible" @created="loadMenus" />
   </section>
 </template>
 
@@ -273,12 +297,53 @@ onMounted(loadMenus);
   font-size: 18px;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.create-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 13px;
+  border: 1px solid var(--ez-primary);
+  border-radius: 7px;
+  color: #fff;
+  background: var(--ez-primary);
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.create-button:hover {
+  border-color: var(--ez-primary-dark);
+  background: var(--ez-primary-dark);
+}
+
 .menu-table {
   width: 100%;
 }
 
 .menu-table :deep(tbody tr) {
   cursor: pointer;
+}
+
+.menu-name-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.icon-display {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ez-ink);
 }
 
 .table-action {
