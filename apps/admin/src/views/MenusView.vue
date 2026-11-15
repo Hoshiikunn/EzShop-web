@@ -5,6 +5,7 @@ import { Eye, Plus } from 'lucide-vue-next';
 import { sysMenuApi } from '@/api/sys-menu';
 import type { MenuInfo, MenuItem, MenuType } from '@/types/api';
 import { formatDateTime } from '@/utils/format';
+import { loadMenuIconOptions, resolveMenuIcon } from '@/utils/menu-icons';
 import AddMenuDrawer from '@/components/AddMenuDrawer.vue';
 
 const menus = ref<MenuItem[]>([]);
@@ -105,7 +106,10 @@ async function openDetail(row: MenuItem) {
   }
 }
 
-onMounted(loadMenus);
+onMounted(() => {
+  void loadMenus();
+  void loadMenuIconOptions().catch(() => undefined);
+});
 </script>
 
 <template>
@@ -133,7 +137,18 @@ onMounted(loadMenus);
         <template #empty>
           <el-empty description="暂无菜单" :image-size="72" />
         </template>
-        <el-table-column prop="menuName" label="菜单名称" min-width="180" show-overflow-tooltip />
+        <el-table-column label="菜单名称" min-width="180" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span class="menu-name-cell">
+              <component
+                v-if="resolveMenuIcon(row.icon)"
+                :is="resolveMenuIcon(row.icon)"
+                :size="15"
+              />
+              {{ row.menuName }}
+            </span>
+          </template>
+        </el-table-column>
         <el-table-column label="菜单类型" width="90" align="center">
           <template #default="{ row }">
             <el-tag size="small" effect="light" :type="getMenuTypeTagType(row.menuType)">
@@ -212,7 +227,17 @@ onMounted(loadMenus);
             </div>
             <div>
               <dt>图标</dt>
-              <dd>{{ detail.icon || '-' }}</dd>
+              <dd>
+                <span v-if="detail.icon" class="icon-display">
+                  <component
+                    v-if="resolveMenuIcon(detail.icon)"
+                    :is="resolveMenuIcon(detail.icon)"
+                    :size="16"
+                  />
+                  <span>{{ detail.icon }}</span>
+                </span>
+                <span v-else>-</span>
+              </dd>
             </div>
             <div>
               <dt>排序</dt>
@@ -305,6 +330,20 @@ onMounted(loadMenus);
 
 .menu-table :deep(tbody tr) {
   cursor: pointer;
+}
+
+.menu-name-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.icon-display {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ez-ink);
 }
 
 .table-action {
