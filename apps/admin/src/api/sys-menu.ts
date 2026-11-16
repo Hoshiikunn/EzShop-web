@@ -1,5 +1,12 @@
 import { requestJson } from '@/api/client';
-import type { MenuCreatePayload, MenuId, MenuInfo, MenuItem, MenuTreeNode } from '@/types/api';
+import type {
+  MenuCreatePayload,
+  MenuId,
+  MenuInfo,
+  MenuItem,
+  MenuTreeNode,
+  MenuUpdatePayload,
+} from '@/types/api';
 
 export const sysMenuApi = {
   tree() {
@@ -24,6 +31,13 @@ export const sysMenuApi = {
     return requestJson<null>({
       url: '/admin/sys/menu/add',
       method: 'post',
+      data: payload,
+    });
+  },
+  update(payload: MenuUpdatePayload) {
+    return requestJson<null>({
+      url: '/admin/sys/menu/update',
+      method: 'put',
       data: payload,
     });
   },

@@ -193,3 +193,7 @@ export interface MenuCreatePayload {
   visible: 0 | 1;
   openStyle?: 0 | 1;
 }
+
+export interface MenuUpdatePayload extends MenuCreatePayload {
+  id: MenuId;
+}
