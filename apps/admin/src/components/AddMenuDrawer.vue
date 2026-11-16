@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref, watch } from 'vue';
-import { ElMessage, type FormInstance, type FormRules, type PopoverInstance } from 'element-plus';
-import { Search, X } from 'lucide-vue-next';
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import { sysMenuApi } from '@/api/sys-menu';
 import type { MenuCreatePayload, MenuId, MenuItem, MenuType } from '@/types/api';
-import { loadMenuIconOptions, resolveMenuIcon } from '@/utils/menu-icons';
-import type { MenuIconOption } from '@/utils/menu-icons';
+import MenuIconPicker from '@/components/MenuIconPicker.vue';
 
 const visible = defineModel<boolean>({
   required: true,
@@ -24,10 +22,6 @@ const formRef = ref<FormInstance>();
 const submitting = ref(false);
 const menuList = ref<MenuItem[]>([]);
 const menuListLoading = ref(false);
-const iconOptions = ref<MenuIconOption[]>([]);
-const iconOptionsLoading = ref(false);
-const iconSearch = ref('');
-const popoverRef = ref<PopoverInstance>();
 
 const form = reactive<MenuForm>({
   pid: '0',
@@ -78,18 +72,6 @@ const allowedMenuTypes = computed<MenuType[]>(() => {
 });
 
 const parentTreeData = computed(() => buildParentTree(menuList.value));
-
-const filteredIconOptions = computed(() => {
-  const query = iconSearch.value.trim().toLowerCase();
-
-  if (!query) {
-    return iconOptions.value;
-  }
-
-  return iconOptions.value.filter((option) => option.name.includes(query));
-});
-
-const selectedIconComponent = computed(() => resolveMenuIcon(form.icon));
 
 function buildParentTree(items: MenuItem[]): ParentTreeNode[] {
   interface BuildNode extends ParentTreeNode {
@@ -220,33 +202,6 @@ async function loadMenuList() {
   }
 }
 
-async function loadIconOptions() {
-  if (iconOptions.value.length > 0) {
-    return;
-  }
-
-  iconOptionsLoading.value = true;
-
-  try {
-    iconOptions.value = await loadMenuIconOptions();
-  } catch {
-    ElMessage.error('图标加载失败');
-  } finally {
-    iconOptionsLoading.value = false;
-  }
-}
-
-function selectIcon(name: string) {
-  form.icon = name;
-  popoverRef.value?.hide();
-  void formRef.value?.clearValidate('icon');
-}
-
-function clearIcon() {
-  form.icon = '';
-  void formRef.value?.clearValidate('icon');
-}
-
 async function submitForm() {
   if (submitting.value) {
     return;
@@ -296,7 +251,6 @@ watch(
 watch(visible, (value) => {
   if (value) {
     void loadMenuList();
-    void loadIconOptions();
   } else {
     resetForm();
   }
@@ -361,40 +315,7 @@ watch(visible, (value) => {
       </el-form-item>
 
       <el-form-item label="图标" prop="icon">
-        <el-popover ref="popoverRef" placement="bottom-start" :width="360" trigger="click">
-          <template #reference>
-            <button class="icon-trigger" type="button">
-              <component v-if="selectedIconComponent" :is="selectedIconComponent" :size="16" />
-              <span :class="{ 'icon-placeholder': !form.icon }">
-                {{ form.icon || '选择图标' }}
-              </span>
-              <X v-if="form.icon" :size="14" @click.stop="clearIcon" />
-            </button>
-          </template>
-
-          <div v-loading="iconOptionsLoading" class="icon-picker">
-            <el-input
-              v-model="iconSearch"
-              :prefix-icon="Search"
-              placeholder="搜索图标名称"
-              clearable
-            />
-
-            <div class="icon-grid">
-              <button
-                v-for="option in filteredIconOptions"
-                :key="option.name"
-                class="icon-option"
-                :class="{ selected: option.name === form.icon }"
-                type="button"
-                :title="option.name"
-                @click="selectIcon(option.name)"
-              >
-                <component :is="option.component" :size="18" />
-              </button>
-            </div>
-          </div>
-        </el-popover>
+        <MenuIconPicker v-model="form.icon" />
       </el-form-item>
 
       <el-form-item label="排序" prop="sort">
@@ -444,59 +365,6 @@ watch(visible, (value) => {
 
 .sort-input {
   width: 100%;
-}
-
-.icon-trigger {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 32px;
-  padding: 0 10px;
-  border: 1px solid var(--ez-line);
-  border-radius: 7px;
-  color: var(--ez-ink);
-  background: #fff;
-  cursor: pointer;
-}
-
-.icon-placeholder {
-  color: var(--ez-muted);
-}
-
-.icon-picker {
-  display: grid;
-  gap: 10px;
-}
-
-.icon-grid {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 4px;
-  max-height: 280px;
-  overflow: auto;
-}
-
-.icon-option {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  color: var(--ez-ink);
-  background: transparent;
-  cursor: pointer;
-}
-
-.icon-option:hover {
-  color: var(--ez-primary-dark);
-  background: #f5f8ff;
-}
-
-.icon-option.selected {
-  color: var(--ez-primary-dark);
-  border-color: var(--ez-primary);
-  background: #eef3ff;
 }
 
 .ghost-button,

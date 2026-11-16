@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Eye, Plus } from 'lucide-vue-next';
+import { Eye, Pencil, Plus } from 'lucide-vue-next';
 import { sysMenuApi } from '@/api/sys-menu';
-import type { MenuInfo, MenuItem, MenuType } from '@/types/api';
+import type { MenuId, MenuInfo, MenuItem, MenuType } from '@/types/api';
 import { formatDateTime } from '@/utils/format';
 import { loadMenuIconOptions, resolveMenuIcon } from '@/utils/menu-icons';
 import AddMenuDrawer from '@/components/AddMenuDrawer.vue';
+import EditMenuDrawer from '@/components/EditMenuDrawer.vue';
 
 const menus = ref<MenuItem[]>([]);
 const tableLoading = ref(false);
@@ -14,6 +15,8 @@ const drawerVisible = ref(false);
 const detailLoading = ref(false);
 const detail = ref<MenuInfo | null>(null);
 const addMenuVisible = ref(false);
+const editMenuVisible = ref(false);
+const editMenuId = ref<MenuId | null>(null);
 
 const menuTypeLabels: Record<MenuType, string> = {
   M: '目录',
@@ -106,6 +109,23 @@ async function openDetail(row: MenuItem) {
   }
 }
 
+function openEditor(menuId: MenuId) {
+  editMenuId.value = menuId;
+  editMenuVisible.value = true;
+}
+
+async function handleMenuUpdated(menuId: MenuId) {
+  await loadMenus();
+
+  if (drawerVisible.value && detail.value?.id === menuId) {
+    try {
+      detail.value = await sysMenuApi.info(menuId);
+    } catch (error) {
+      ElMessage.error(error instanceof Error ? error.message : '菜单详情刷新失败');
+    }
+  }
+}
+
 onMounted(() => {
   void loadMenus();
   void loadMenuIconOptions().catch(() => undefined);
@@ -168,16 +188,22 @@ onMounted(() => {
         </el-table-column>
         <el-table-column
           label="操作"
-          width="120"
+          width="180"
           align="center"
           header-align="center"
           fixed="right"
         >
           <template #default="{ row }">
-            <button class="table-action" type="button" @click.stop="openDetail(row)">
-              <Eye :size="15" />
-              <span>详情</span>
-            </button>
+            <div class="action-grid">
+              <button class="table-action" type="button" @click.stop="openDetail(row)">
+                <Eye :size="15" />
+                <span>详情</span>
+              </button>
+              <button class="table-action" type="button" @click.stop="openEditor(row.id)">
+                <Pencil :size="15" />
+                <span>编辑</span>
+              </button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -265,6 +291,7 @@ onMounted(() => {
     </el-drawer>
 
     <AddMenuDrawer v-model="addMenuVisible" @created="loadMenus" />
+    <EditMenuDrawer v-model="editMenuVisible" :menu-id="editMenuId" @updated="handleMenuUpdated" />
   </section>
 </template>
 
@@ -330,6 +357,13 @@ onMounted(() => {
 
 .menu-table :deep(tbody tr) {
   cursor: pointer;
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 6px 8px;
+  justify-content: center;
 }
 
 .menu-name-cell {
