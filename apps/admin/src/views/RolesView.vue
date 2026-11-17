@@ -8,7 +8,6 @@ import { sysMenuApi } from '@/api/sys-menu';
 import type {
   MenuId,
   MenuTreeNode,
-  MenuType,
   RolePageItem,
   RoleInfo,
   RolePageQuery,
@@ -17,6 +16,7 @@ import type {
   RoleStatusPayload,
 } from '@/types/api';
 import { formatDateTime } from '@/utils/format';
+import { getMenuTypeLabel, getMenuTypeTagType } from '@/utils/menu-types';
 import AddRoleDrawer from '@/components/AddRoleDrawer.vue';
 import EditRoleDrawer from '@/components/EditRoleDrawer.vue';
 
@@ -39,26 +39,6 @@ const menuTreeProps = {
   label: 'menuName',
   children: 'children',
 };
-
-const menuTypeLabels: Record<MenuType, string> = {
-  M: '目录',
-  C: '菜单',
-  F: '按钮',
-};
-
-const menuTypeTagTypes: Record<MenuType, 'primary' | 'success' | 'warning'> = {
-  M: 'primary',
-  C: 'success',
-  F: 'warning',
-};
-
-function getMenuTypeLabel(menuType: string): string {
-  return menuTypeLabels[menuType as MenuType] ?? '未知';
-}
-
-function getMenuTypeTagType(menuType: string): 'primary' | 'success' | 'warning' {
-  return menuTypeTagTypes[menuType as MenuType] ?? 'primary';
-}
 
 const selectedMenuCount = computed(() => detail.value?.menuIds?.length ?? 0);
 

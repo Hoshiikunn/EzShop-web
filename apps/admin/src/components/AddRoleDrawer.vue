@@ -3,7 +3,8 @@ import { nextTick, reactive, ref, watch } from 'vue';
 import { ElMessage, type FormInstance, type FormRules, type TreeInstance } from 'element-plus';
 import { sysRoleApi } from '@/api/sys-role';
 import { sysMenuApi } from '@/api/sys-menu';
-import type { MenuTreeNode, MenuType, RoleCreatePayload } from '@/types/api';
+import type { MenuTreeNode, RoleCreatePayload } from '@/types/api';
+import { getMenuTypeLabel, getMenuTypeTagType } from '@/utils/menu-types';
 
 const visible = defineModel<boolean>({
   required: true,
@@ -24,26 +25,6 @@ const menuTreeProps = {
   label: 'menuName',
   children: 'children',
 };
-
-const menuTypeLabels: Record<MenuType, string> = {
-  M: '目录',
-  C: '菜单',
-  F: '按钮',
-};
-
-const menuTypeTagTypes: Record<MenuType, 'primary' | 'success' | 'warning'> = {
-  M: 'primary',
-  C: 'success',
-  F: 'warning',
-};
-
-function getMenuTypeLabel(menuType: string): string {
-  return menuTypeLabels[menuType as MenuType] ?? '未知';
-}
-
-function getMenuTypeTagType(menuType: string): 'primary' | 'success' | 'warning' {
-  return menuTypeTagTypes[menuType as MenuType] ?? 'primary';
-}
 
 const form = reactive<RoleCreatePayload>({
   roleName: '',

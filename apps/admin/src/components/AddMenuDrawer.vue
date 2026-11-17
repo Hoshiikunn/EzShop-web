@@ -3,6 +3,7 @@ import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import { sysMenuApi } from '@/api/sys-menu';
 import type { MenuCreatePayload, MenuId, MenuItem, MenuType } from '@/types/api';
+import { MENU_TYPE_LABELS } from '@/utils/menu-types';
 import MenuIconPicker from '@/components/MenuIconPicker.vue';
 
 const visible = defineModel<boolean>({
@@ -35,12 +36,6 @@ const form = reactive<MenuForm>({
   visible: undefined,
   openStyle: 0,
 });
-
-const menuTypeLabels: Record<MenuType, string> = {
-  M: '目录',
-  C: '菜单',
-  F: '按钮',
-};
 
 interface ParentTreeNode {
   id: MenuId;
@@ -283,7 +278,7 @@ watch(visible, (value) => {
       <el-form-item label="菜单类型" prop="menuType">
         <el-radio-group v-model="form.menuType">
           <el-radio-button v-for="menuType in allowedMenuTypes" :key="menuType" :value="menuType">
-            {{ menuTypeLabels[menuType] }}
+            {{ MENU_TYPE_LABELS[menuType] }}
           </el-radio-button>
         </el-radio-group>
       </el-form-item>

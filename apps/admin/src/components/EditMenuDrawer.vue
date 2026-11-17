@@ -3,6 +3,7 @@ import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import { sysMenuApi } from '@/api/sys-menu';
 import type { MenuId, MenuInfo, MenuItem, MenuType, MenuUpdatePayload } from '@/types/api';
+import { getMenuTypeLabel } from '@/utils/menu-types';
 import MenuIconPicker from '@/components/MenuIconPicker.vue';
 
 const props = defineProps<{
@@ -43,13 +44,7 @@ const form = reactive<MenuForm>({
   openStyle: 0,
 });
 
-const menuTypeLabels: Record<MenuType, string> = {
-  M: '目录',
-  C: '菜单',
-  F: '按钮',
-};
-
-const currentMenuTypeLabel = computed(() => (form.menuType ? menuTypeLabels[form.menuType] : ''));
+const currentMenuTypeLabel = computed(() => (form.menuType ? getMenuTypeLabel(form.menuType) : ''));
 
 interface ParentTreeNode {
   id: MenuId;
@@ -61,7 +56,7 @@ interface ParentTreeNode {
 const parentTreeData = computed(() => buildParentTree(menuList.value));
 
 function isParentDisabled(item: MenuItem): boolean {
-  // 按钮不可作为父菜单
+  // 权限节点不可作为父菜单
   if (item.menuType === 'F') {
     return true;
   }
