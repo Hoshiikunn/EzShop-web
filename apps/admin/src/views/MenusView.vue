@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Eye, Pencil, Plus } from 'lucide-vue-next';
+import { Eye, Pencil, Plus, Trash2 } from 'lucide-vue-next';
 import { sysMenuApi } from '@/api/sys-menu';
 import type { MenuId, MenuInfo, MenuItem } from '@/types/api';
 import { formatDateTime } from '@/utils/format';
@@ -18,6 +18,7 @@ const detail = ref<MenuInfo | null>(null);
 const addMenuVisible = ref(false);
 const editMenuVisible = ref(false);
 const editMenuId = ref<MenuId | null>(null);
+const deletingMenuId = ref<MenuId | null>(null);
 
 interface MenuTreeItem extends MenuItem {
   children?: MenuTreeItem[];
@@ -107,6 +108,44 @@ async function handleMenuUpdated(menuId: MenuId) {
   }
 }
 
+async function deleteMenu(menu: MenuItem | MenuInfo) {
+  if (deletingMenuId.value) {
+    return;
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除菜单「${menu.menuName}」吗？删除后不可恢复，已绑定角色的授权将同步解除。`,
+      '删除菜单',
+      {
+        confirmButtonText: '删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+      },
+    );
+  } catch {
+    return;
+  }
+
+  deletingMenuId.value = menu.id;
+
+  try {
+    await sysMenuApi.remove(menu.id);
+    ElMessage.success('菜单已删除');
+
+    if (drawerVisible.value && detail.value?.id === menu.id) {
+      drawerVisible.value = false;
+      detail.value = null;
+    }
+
+    await loadMenus();
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '菜单删除失败');
+  } finally {
+    deletingMenuId.value = null;
+  }
+}
+
 onMounted(() => {
   void loadMenus();
   void loadMenuIconOptions().catch(() => undefined);
@@ -169,7 +208,7 @@ onMounted(() => {
         </el-table-column>
         <el-table-column
           label="操作"
-          width="180"
+          width="240"
           align="center"
           header-align="center"
           fixed="right"
@@ -183,6 +222,15 @@ onMounted(() => {
               <button class="table-action" type="button" @click.stop="openEditor(row.id)">
                 <Pencil :size="15" />
                 <span>编辑</span>
+              </button>
+              <button
+                class="table-action delete-action"
+                type="button"
+                :disabled="deletingMenuId === row.id"
+                @click.stop="deleteMenu(row)"
+              >
+                <Trash2 :size="15" />
+                <span>删除</span>
               </button>
             </div>
           </template>
@@ -201,6 +249,22 @@ onMounted(() => {
               <strong>{{ detail.menuName }}</strong>
               <span>{{ getMenuTypeLabel(detail.menuType) }}</span>
             </div>
+          </div>
+
+          <div class="detail-actions">
+            <button class="detail-action-button" type="button" @click="openEditor(detail.id)">
+              <Pencil :size="15" />
+              编辑
+            </button>
+            <button
+              class="detail-action-button delete-action"
+              type="button"
+              :disabled="deletingMenuId === detail.id"
+              @click="deleteMenu(detail)"
+            >
+              <Trash2 :size="15" />
+              删除
+            </button>
           </div>
 
           <dl class="detail-list">
@@ -341,10 +405,9 @@ onMounted(() => {
 }
 
 .action-grid {
-  display: grid;
-  grid-template-columns: repeat(2, auto);
-  gap: 6px 8px;
+  display: flex;
   justify-content: center;
+  gap: 8px;
 }
 
 .menu-name-cell {
@@ -378,6 +441,56 @@ onMounted(() => {
 .table-action:hover {
   border-color: rgba(56, 102, 242, 0.38);
   background: #f5f8ff;
+}
+
+.table-action.delete-action {
+  color: #d2494a;
+}
+
+.table-action.delete-action:hover:not(:disabled) {
+  border-color: rgba(210, 73, 74, 0.38);
+  background: #fff5f5;
+}
+
+.table-action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.detail-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-bottom: 18px;
+}
+
+.detail-action-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--ez-line);
+  border-radius: 7px;
+  color: var(--ez-primary-dark);
+  background: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.detail-action-button.delete-action {
+  color: #d2494a;
+}
+
+.detail-action-button.delete-action:hover:not(:disabled) {
+  border-color: rgba(210, 73, 74, 0.38);
+  background: #fff5f5;
+}
+
+.detail-action-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .detail-body {
