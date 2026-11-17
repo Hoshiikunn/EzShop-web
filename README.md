@@ -1,7 +1,7 @@
 # EzShop-web
 
 EzShop https://github.com/Hoshiikunn/EzShop 的单体前端仓库。该前端项目由 AI Agent GLM-5.3 + Codex 开发。
-当前已实现后台管理系统 `apps/admin`；前台微信小程序 `apps/weapp` 为预留目录，等待前台后端接口确定后初始化。
+当前已实现后台管理系统 `apps/admin` 的用户、角色与菜单管理模块；前台微信小程序 `apps/weapp` 为预留目录，等待前台后端接口确定后初始化。
 
 ## 技术栈
 
