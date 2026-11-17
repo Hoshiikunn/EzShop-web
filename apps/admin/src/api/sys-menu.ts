@@ -41,4 +41,10 @@ export const sysMenuApi = {
       data: payload,
     });
   },
+  remove(id: MenuId) {
+    return requestJson<null>({
+      url: `/admin/sys/menu/${id}`,
+      method: 'delete',
+    });
+  },
 };
