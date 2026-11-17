@@ -33,8 +33,14 @@ const submitting = ref(false);
 const avatarFile = ref<File | null>(null);
 const roleOptions = ref<RoleListItem[]>([]);
 
-type EditUserForm = Omit<UserUpdatePayload, 'avatarUrl'> & {
+type EditUserForm = Omit<
+  UserUpdatePayload,
+  'avatarUrl' | 'gender' | 'mobile' | 'email'
+> & {
   avatarUrl: string;
+  gender: Gender | undefined;
+  mobile: string;
+  email: string;
   roleIds: RoleId[];
 };
 

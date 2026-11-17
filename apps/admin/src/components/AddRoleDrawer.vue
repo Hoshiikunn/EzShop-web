@@ -6,6 +6,10 @@ import { sysMenuApi } from '@/api/sys-menu';
 import type { MenuTreeNode, RoleCreatePayload } from '@/types/api';
 import { getMenuTypeLabel, getMenuTypeTagType } from '@/utils/menu-types';
 
+type RoleForm = Omit<RoleCreatePayload, 'remark'> & {
+  remark: string;
+};
+
 const visible = defineModel<boolean>({
   required: true,
 });
@@ -26,7 +30,7 @@ const menuTreeProps = {
   children: 'children',
 };
 
-const form = reactive<RoleCreatePayload>({
+const form = reactive<RoleForm>({
   roleName: '',
   roleKey: '',
   sort: 0,
@@ -34,7 +38,7 @@ const form = reactive<RoleCreatePayload>({
   menuIds: [],
 });
 
-const rules: FormRules<RoleCreatePayload> = {
+const rules: FormRules<RoleForm> = {
   roleName: [
     { required: true, message: '请输入角色名称', trigger: 'blur' },
     { max: 30, message: '角色名称长度不可超过 30 字符', trigger: 'blur' },

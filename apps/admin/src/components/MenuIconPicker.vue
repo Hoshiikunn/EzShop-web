@@ -62,7 +62,7 @@ function clear() {
   >
     <template #reference>
       <button class="icon-trigger" type="button">
-        <component v-if="selectedComponent" :is="selectedComponent" :size="16" />
+        <component :is="selectedComponent" v-if="selectedComponent" :size="16" />
         <span :class="{ 'icon-placeholder': !model }">{{ model || '选择图标' }}</span>
         <X v-if="model" :size="14" @click.stop="clear" />
       </button>

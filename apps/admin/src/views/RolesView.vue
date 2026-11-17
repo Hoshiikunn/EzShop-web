@@ -405,7 +405,7 @@ async function handleRoleUpdated(roleId: RoleId) {
                 :before-change="() => beforeRoleStatusChange(row)"
                 :loading="statusChangingId === row.id"
                 :disabled="statusChangingId === row.id || deletingRoleId === row.id"
-                @change="(value) => changeRoleStatus(row, Number(value) as RoleStatus)"
+                @change="(value: RoleStatus) => changeRoleStatus(row, value)"
               />
             </div>
           </template>

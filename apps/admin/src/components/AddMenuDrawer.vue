@@ -14,9 +14,16 @@ const emit = defineEmits<{
   created: [];
 }>();
 
-type MenuForm = Omit<MenuCreatePayload, 'menuType' | 'visible'> & {
+type MenuForm = Omit<
+  MenuCreatePayload,
+  'menuType' | 'visible' | 'path' | 'component' | 'perms' | 'icon'
+> & {
   menuType: MenuType | undefined;
   visible: 0 | 1 | undefined;
+  path: string;
+  component: string;
+  perms: string;
+  icon: string;
 };
 
 const formRef = ref<FormInstance>();
@@ -72,7 +79,7 @@ function buildParentTree(items: MenuItem[]): ParentTreeNode[] {
   interface BuildNode extends ParentTreeNode {
     pid: MenuId;
     menuType: MenuType;
-    childNodes: ParentTreeNode[];
+    childNodes: BuildNode[];
   }
 
   const nodes = new Map<string, BuildNode>();
