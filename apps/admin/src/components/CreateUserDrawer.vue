@@ -27,6 +27,8 @@ const enabledRoles = computed(() => roleOptions.value.filter((role) => role.stat
 type CreateUserForm = Omit<UserCreatePayload, 'avatarUrl' | 'gender'> & {
   gender: Gender | undefined;
   roleIds: RoleId[];
+  mobile: string;
+  email: string;
 };
 
 const form = reactive<CreateUserForm>({

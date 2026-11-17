@@ -4,7 +4,6 @@ import { ElMessage, ElMessageBox, type TableInstance } from 'element-plus';
 import { Eye, Pencil, Power, RefreshCw, Search, Trash2, UserPlus } from 'lucide-vue-next';
 import { sysUserApi } from '@/api/sys-user';
 import type {
-  UserBatchDeletePayload,
   UserPageItem,
   UserInfo,
   UserPageQuery,

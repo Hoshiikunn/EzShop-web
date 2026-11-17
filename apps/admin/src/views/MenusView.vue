@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { Eye, Pencil, Plus, Trash2 } from 'lucide-vue-next';
 import { sysMenuApi } from '@/api/sys-menu';
 import type { MenuId, MenuInfo, MenuItem } from '@/types/api';
@@ -181,8 +181,8 @@ onMounted(() => {
           <template #default="{ row }">
             <span class="menu-name-cell">
               <component
-                v-if="resolveMenuIcon(row.icon)"
                 :is="resolveMenuIcon(row.icon)"
+                v-if="resolveMenuIcon(row.icon)"
                 :size="15"
               />
               {{ row.menuName }}
@@ -301,8 +301,8 @@ onMounted(() => {
               <dd>
                 <span v-if="detail.icon" class="icon-display">
                   <component
-                    v-if="resolveMenuIcon(detail.icon)"
                     :is="resolveMenuIcon(detail.icon)"
+                    v-if="resolveMenuIcon(detail.icon)"
                     :size="16"
                   />
                   <span>{{ detail.icon }}</span>

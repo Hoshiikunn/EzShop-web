@@ -6,6 +6,10 @@ import { sysMenuApi } from '@/api/sys-menu';
 import type { MenuTreeNode, RoleUpdatePayload } from '@/types/api';
 import { getMenuTypeLabel, getMenuTypeTagType } from '@/utils/menu-types';
 
+type RoleForm = Omit<RoleUpdatePayload, 'remark'> & {
+  remark: string;
+};
+
 const props = defineProps<{
   roleId: string | null;
 }>();
@@ -25,7 +29,7 @@ const loading = ref(false);
 const submitting = ref(false);
 const menuTree = ref<MenuTreeNode[]>([]);
 const menuTreeLoaded = ref(false);
-let menuTreeToken = 0;
+const menuTreeLoading = ref(false);
 let loadRoleToken = 0;
 
 const menuTreeProps = {
@@ -33,7 +37,7 @@ const menuTreeProps = {
   children: 'children',
 };
 
-const form = reactive<RoleUpdatePayload>({
+const form = reactive<RoleForm>({
   id: '',
   roleName: '',
   sort: 0,
@@ -41,7 +45,7 @@ const form = reactive<RoleUpdatePayload>({
   menuIds: [],
 });
 
-const rules: FormRules<RoleUpdatePayload> = {
+const rules: FormRules<RoleForm> = {
   roleName: [
     { required: true, message: '请输入角色名称', trigger: 'blur' },
     { max: 30, message: '角色名称长度不可超过 30 字符', trigger: 'blur' },
@@ -120,6 +124,7 @@ function handleMenuCheck() {
 async function loadRole(roleId: string) {
   const requestToken = ++loadRoleToken;
   loading.value = true;
+  menuTreeLoading.value = true;
 
   try {
     const [role, menuTreeData] = await Promise.all([sysRoleApi.info(roleId), sysMenuApi.tree()]);
@@ -141,6 +146,7 @@ async function loadRole(roleId: string) {
   } finally {
     if (requestToken === loadRoleToken) {
       loading.value = false;
+      menuTreeLoading.value = false;
     }
   }
 }
