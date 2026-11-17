@@ -3,9 +3,10 @@ import { computed, onMounted, ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { Eye, Pencil, Plus } from 'lucide-vue-next';
 import { sysMenuApi } from '@/api/sys-menu';
-import type { MenuId, MenuInfo, MenuItem, MenuType } from '@/types/api';
+import type { MenuId, MenuInfo, MenuItem } from '@/types/api';
 import { formatDateTime } from '@/utils/format';
 import { loadMenuIconOptions, resolveMenuIcon } from '@/utils/menu-icons';
+import { getMenuTypeLabel, getMenuTypeTagType } from '@/utils/menu-types';
 import AddMenuDrawer from '@/components/AddMenuDrawer.vue';
 import EditMenuDrawer from '@/components/EditMenuDrawer.vue';
 
@@ -17,26 +18,6 @@ const detail = ref<MenuInfo | null>(null);
 const addMenuVisible = ref(false);
 const editMenuVisible = ref(false);
 const editMenuId = ref<MenuId | null>(null);
-
-const menuTypeLabels: Record<MenuType, string> = {
-  M: '目录',
-  C: '菜单',
-  F: '按钮',
-};
-
-const menuTypeTagTypes: Record<MenuType, 'primary' | 'success' | 'warning'> = {
-  M: 'primary',
-  C: 'success',
-  F: 'warning',
-};
-
-function getMenuTypeLabel(menuType: string): string {
-  return menuTypeLabels[menuType as MenuType] ?? '未知';
-}
-
-function getMenuTypeTagType(menuType: string): 'primary' | 'success' | 'warning' {
-  return menuTypeTagTypes[menuType as MenuType] ?? 'primary';
-}
 
 interface MenuTreeItem extends MenuItem {
   children?: MenuTreeItem[];
