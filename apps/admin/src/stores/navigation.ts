@@ -18,8 +18,10 @@ async function loadNavigation(router: Router) {
   const store = useNavigationStore();
 
   for (const route of store.dynamicRoutes) {
-    if (router.hasRoute(route.name)) {
-      router.removeRoute(route.name);
+    const routeName = route.name;
+
+    if (typeof routeName === 'string' && router.hasRoute(routeName)) {
+      router.removeRoute(routeName);
     }
   }
 

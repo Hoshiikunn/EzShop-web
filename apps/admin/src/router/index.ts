@@ -12,6 +12,7 @@ const router = createRouter({
       meta: { public: true },
     },
     {
+      name: 'admin',
       path: '/',
       component: () => import('@/layouts/AdminLayout.vue'),
       redirect: '/dashboard',
@@ -27,7 +28,7 @@ const router = createRouter({
     {
       name: 'not-found',
       path: '/:pathMatch(.*)*',
-      redirect: '/dashboard',
+      component: () => import('@/views/NotFoundView.vue'),
     },
   ],
 });
