@@ -1,5 +1,5 @@
 import { requestJson } from '@/api/client';
-import type { LoginPayload, LoginToken } from '@/types/api';
+import type { LoginPayload, LoginToken, MenuTreeNode } from '@/types/api';
 
 export const authApi = {
   login(payload: LoginPayload) {
@@ -13,6 +13,12 @@ export const authApi = {
     return requestJson<null>({
       url: '/admin/auth/logout',
       method: 'post',
+    });
+  },
+  nav() {
+    return requestJson<MenuTreeNode[]>({
+      url: '/admin/auth/nav',
+      method: 'get',
     });
   },
 };

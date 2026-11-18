@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { tokenStorage } from '@/utils/token-storage';
+import { useNavigationStore } from '@/stores/navigation';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -11,6 +12,7 @@ const router = createRouter({
       meta: { public: true },
     },
     {
+      name: 'admin',
       path: '/',
       component: () => import('@/layouts/AdminLayout.vue'),
       redirect: '/dashboard',
@@ -21,34 +23,17 @@ const router = createRouter({
           component: () => import('@/views/DashboardView.vue'),
           meta: { title: '仪表盘' },
         },
-        {
-          path: 'users',
-          name: 'users',
-          component: () => import('@/views/UsersView.vue'),
-          meta: { title: '用户管理' },
-        },
-        {
-          path: 'roles',
-          name: 'roles',
-          component: () => import('@/views/RolesView.vue'),
-          meta: { title: '角色管理' },
-        },
-        {
-          path: 'menus',
-          name: 'menus',
-          component: () => import('@/views/MenusView.vue'),
-          meta: { title: '菜单管理' },
-        },
       ],
     },
     {
+      name: 'not-found',
       path: '/:pathMatch(.*)*',
-      redirect: '/dashboard',
+      component: () => import('@/views/NotFoundView.vue'),
     },
   ],
 });
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   if (to.meta.public) {
     return true;
   }
@@ -60,6 +45,20 @@ router.beforeEach((to) => {
       name: 'login',
       query: isRootEntry ? undefined : { redirect: to.fullPath },
     };
+  }
+
+  if (to.name === 'not-found') {
+    const navigationStore = useNavigationStore();
+    await navigationStore.ensureNavigation(router);
+
+    if (navigationStore.hasRoute(to.path)) {
+      return {
+        path: to.path,
+        query: to.query,
+        hash: to.hash,
+        replace: true,
+      };
+    }
   }
 
   return true;
