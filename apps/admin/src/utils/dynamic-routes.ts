@@ -36,10 +36,6 @@ export function buildMenuRoutePath(node: MenuTreeNode, parentPath = ''): string 
     return '';
   }
 
-  if (path.startsWith('/')) {
-    return normalizeRoutePath(path);
-  }
-
   const parent = parentPath.endsWith('/') ? parentPath.slice(0, -1) : parentPath;
 
   return normalizeRoutePath(`${parent}/${path}`);
