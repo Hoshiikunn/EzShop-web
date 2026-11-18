@@ -1,29 +1,17 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import {
-  LayoutDashboard,
-  ListTree,
-  Menu,
-  Settings,
-  ShieldCheck,
-  Users,
-  LogOut,
-} from 'lucide-vue-next';
+import { Settings, LogOut } from 'lucide-vue-next';
 import { useAuthStore } from '@/stores/auth';
+import { useNavigationStore } from '@/stores/navigation';
+import { loadMenuIconOptions, resolveMenuIcon } from '@/utils/menu-icons';
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const navigationStore = useNavigationStore();
 const appVersion = __APP_VERSION__;
-
-const navigation = [
-  { path: '/dashboard', title: '仪表盘', icon: LayoutDashboard },
-  { path: '/users', title: '用户管理', icon: Users },
-  { path: '/roles', title: '角色管理', icon: ShieldCheck },
-  { path: '/menus', title: '菜单管理', icon: ListTree },
-];
 
 const activePath = computed(() => route.path);
 
@@ -38,6 +26,13 @@ async function handleLogout() {
   ElMessage.success('已退出登录');
   await router.replace('/login');
 }
+
+onMounted(() => {
+  void navigationStore.ensureNavigation(router).catch(() => {
+    ElMessage.error('导航菜单加载失败');
+  });
+  void loadMenuIconOptions().catch(() => undefined);
+});
 </script>
 
 <template>
@@ -50,21 +45,15 @@ async function handleLogout() {
 
       <nav class="nav">
         <RouterLink
-          v-for="item in navigation"
-          :key="item.path"
+          v-for="item in navigationStore.menuItems"
+          :key="item.id"
           :to="item.path"
           class="nav-item"
           :class="{ active: activePath === item.path }"
         >
-          <component :is="item.icon" :size="18" />
-          <span>{{ item.title }}</span>
+          <component :is="resolveMenuIcon(item.icon)" :size="18" />
+          <span>{{ item.menuName }}</span>
         </RouterLink>
-
-        <button class="nav-item reserved" type="button" disabled>
-          <Menu :size="18" />
-          <span>动态菜单</span>
-          <small>预留</small>
-        </button>
       </nav>
 
       <div class="sidebar-footer">
