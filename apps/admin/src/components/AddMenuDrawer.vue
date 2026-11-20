@@ -14,16 +14,17 @@ const emit = defineEmits<{
   created: [];
 }>();
 
-type MenuForm = Omit<
-  MenuCreatePayload,
-  'menuType' | 'visible' | 'path' | 'component' | 'perms' | 'icon'
-> & {
+type MenuForm = {
   menuType: MenuType | undefined;
+  pid: MenuId;
+  menuName: string;
   visible: 0 | 1 | undefined;
   path: string;
   component: string;
   perms: string;
   icon: string;
+  sort: number;
+  openStyle: 0 | 1 | undefined;
 };
 
 const formRef = ref<FormInstance>();
@@ -41,7 +42,7 @@ const form = reactive<MenuForm>({
   icon: '',
   sort: 0,
   visible: undefined,
-  openStyle: 0,
+  openStyle: undefined,
 });
 
 interface ParentTreeNode {
@@ -129,7 +130,7 @@ function buildParentTree(items: MenuItem[]): ParentTreeNode[] {
   return [root];
 }
 
-const rules: FormRules<MenuForm> = {
+const rules = computed<FormRules<MenuForm>>(() => ({
   pid: [{ required: true, message: '请选择父菜单', trigger: 'change' }],
   menuName: [
     { required: true, message: '请输入菜单名称', trigger: 'blur' },
@@ -149,8 +150,15 @@ const rules: FormRules<MenuForm> = {
   ],
   icon: [{ max: 50, message: '图标长度不可超过 50 字符', trigger: 'blur' }],
   sort: [{ required: true, message: '请输入排序', trigger: 'blur' }],
-  visible: [{ required: true, message: '请选择可见性', trigger: 'change' }],
-};
+  visible:
+    form.menuType === 'M' || form.menuType === 'C'
+      ? [{ required: true, message: '请选择可见性', trigger: 'change' }]
+      : [],
+  openStyle:
+    form.menuType === 'C'
+      ? [{ required: true, message: '请选择打开方式', trigger: 'change' }]
+      : [],
+}));
 
 function resetForm() {
   form.pid = '0';
@@ -162,33 +170,79 @@ function resetForm() {
   form.icon = '';
   form.sort = 0;
   form.visible = undefined;
-  form.openStyle = 0;
+  form.openStyle = undefined;
   void nextTick(() => formRef.value?.clearValidate());
 }
 
 function buildPayload(): MenuCreatePayload {
-  const { menuType, visible } = form;
-
-  if (menuType !== 'M' && menuType !== 'C' && menuType !== 'F') {
-    throw new Error('请选择菜单类型');
-  }
-
-  if (visible !== 0 && visible !== 1) {
-    throw new Error('请选择可见性');
-  }
-
-  return {
+  const { menuType } = form;
+  const icon = form.icon.trim() || undefined;
+  const common = {
     pid: form.pid,
     menuName: form.menuName.trim(),
-    menuType,
-    path: form.path.trim() || undefined,
-    component: form.component.trim() || undefined,
-    perms: menuType === 'F' ? form.perms.trim() : undefined,
-    icon: form.icon.trim() || undefined,
+    icon,
     sort: form.sort,
-    visible,
-    openStyle: form.openStyle,
   };
+
+  if (menuType === 'M') {
+    if (form.visible !== 0 && form.visible !== 1) {
+      throw new Error('请选择可见性');
+    }
+
+    return {
+      ...common,
+      menuType,
+      path: form.path.trim() || undefined,
+      visible: form.visible,
+    };
+  }
+
+  if (menuType === 'C') {
+    if (form.visible !== 0 && form.visible !== 1) {
+      throw new Error('请选择可见性');
+    }
+
+    if (form.openStyle !== 0 && form.openStyle !== 1) {
+      throw new Error('请选择打开方式');
+    }
+
+    return {
+      ...common,
+      menuType,
+      path: form.path.trim() || undefined,
+      component: form.component.trim() || undefined,
+      visible: form.visible,
+      openStyle: form.openStyle,
+    };
+  }
+
+  if (menuType === 'F') {
+    return {
+      ...common,
+      menuType,
+      perms: form.perms.trim(),
+    };
+  }
+
+  throw new Error('请选择菜单类型');
+}
+
+function clearMenuFields() {
+  if (form.menuType !== 'M' && form.menuType !== 'C') {
+    form.path = '';
+    form.visible = undefined;
+  }
+
+  if (form.menuType !== 'C') {
+    form.component = '';
+    form.openStyle = undefined;
+  }
+
+  if (form.menuType !== 'F') {
+    form.perms = '';
+  }
+
+  void formRef.value?.clearValidate(['path', 'component', 'perms', 'visible', 'openStyle']);
 }
 
 async function loadMenuList() {
@@ -242,12 +296,7 @@ watch(
 
 watch(
   () => form.menuType,
-  (value) => {
-    if (value !== 'F') {
-      form.perms = '';
-      void formRef.value?.clearValidate('perms');
-    }
-  },
+  clearMenuFields,
 );
 
 watch(visible, (value) => {
@@ -299,11 +348,15 @@ watch(visible, (value) => {
         />
       </el-form-item>
 
-      <el-form-item label="路由地址" prop="path">
+      <el-form-item
+        v-if="form.menuType === 'M' || form.menuType === 'C'"
+        label="路由地址"
+        prop="path"
+      >
         <el-input v-model="form.path" maxlength="255" placeholder="选填，请输入路由地址" />
       </el-form-item>
 
-      <el-form-item label="组件路径" prop="component">
+      <el-form-item v-if="form.menuType === 'C'" label="组件路径" prop="component">
         <el-input v-model="form.component" maxlength="255" placeholder="选填，请输入组件路径" />
       </el-form-item>
 
@@ -331,14 +384,18 @@ watch(visible, (value) => {
         />
       </el-form-item>
 
-      <el-form-item label="可见性" prop="visible">
+      <el-form-item
+        v-if="form.menuType === 'M' || form.menuType === 'C'"
+        label="可见性"
+        prop="visible"
+      >
         <el-radio-group v-model="form.visible">
           <el-radio-button :value="1">显示</el-radio-button>
           <el-radio-button :value="0">隐藏</el-radio-button>
         </el-radio-group>
       </el-form-item>
 
-      <el-form-item label="打开方式" prop="openStyle">
+      <el-form-item v-if="form.menuType === 'C'" label="打开方式" prop="openStyle">
         <el-radio-group v-model="form.openStyle">
           <el-radio-button :value="0">内部</el-radio-button>
           <el-radio-button :value="1">外部</el-radio-button>

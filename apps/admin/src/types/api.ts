@@ -172,28 +172,46 @@ export interface MenuItem {
   perms?: string;
   icon?: string;
   sort?: number;
-  visible: 0 | 1;
+  visible?: 0 | 1;
 }
 
 export interface MenuInfo extends MenuItem {
-  openStyle: 0 | 1;
+  openStyle?: 0 | 1;
   createTime?: string;
   updateTime?: string;
 }
 
-export interface MenuCreatePayload {
+export interface MenuBasePayload {
   pid: MenuId;
   menuName: string;
-  menuType: MenuType;
-  path?: string;
-  component?: string;
-  perms?: string;
   icon?: string;
   sort: number;
-  visible: 0 | 1;
-  openStyle?: 0 | 1;
 }
 
-export interface MenuUpdatePayload extends MenuCreatePayload {
-  id: MenuId;
+export interface MenuDirectoryPayload extends MenuBasePayload {
+  menuType: 'M';
+  path?: string;
+  visible: 0 | 1;
 }
+
+export interface MenuPagePayload extends MenuBasePayload {
+  menuType: 'C';
+  path?: string;
+  component?: string;
+  visible: 0 | 1;
+  openStyle: 0 | 1;
+}
+
+export interface MenuPermissionPayload extends MenuBasePayload {
+  menuType: 'F';
+  perms: string;
+}
+
+export type MenuCreatePayload =
+  | MenuDirectoryPayload
+  | MenuPagePayload
+  | MenuPermissionPayload;
+
+export type MenuUpdatePayload = MenuCreatePayload & {
+  id: MenuId;
+};
