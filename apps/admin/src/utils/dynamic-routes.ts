@@ -98,15 +98,11 @@ export function flattenVisibleMenuItems(
   parentPath = '',
 ): MenuRouteItem[] {
   return nodes.flatMap((node) => {
-    if (node.visible === 0) {
+    if (node.menuType === 'F' || node.visible !== 1) {
       return [];
     }
 
     const routePath = buildMenuRoutePath(node, parentPath);
-
-    if (node.menuType === 'F') {
-      return [];
-    }
 
     if (node.menuType === 'M') {
       return flattenVisibleMenuItems(node.children ?? [], routePath);

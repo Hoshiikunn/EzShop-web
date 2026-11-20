@@ -64,6 +64,22 @@ function buildMenuTree(items: MenuItem[]): MenuTreeItem[] {
   return roots;
 }
 
+function formatMenuVisible(menu: MenuItem | MenuInfo): string {
+  if (menu.menuType === 'F' || menu.visible === undefined) {
+    return '-';
+  }
+
+  return menu.visible === 0 ? '隐藏' : '显示';
+}
+
+function formatMenuOpenStyle(menu: MenuInfo): string {
+  if (menu.menuType !== 'C' || menu.openStyle === undefined) {
+    return '-';
+  }
+
+  return menu.openStyle === 1 ? '外部' : '内部';
+}
+
 async function loadMenus() {
   tableLoading.value = true;
 
@@ -196,14 +212,27 @@ onMounted(() => {
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="path" label="路由地址" min-width="140" show-overflow-tooltip />
-        <el-table-column prop="perms" label="权限标识" min-width="170" show-overflow-tooltip />
+        <el-table-column label="路由地址" min-width="140" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ row.path || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="权限标识" min-width="170" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ row.perms || '-' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="sort" label="排序" width="70" align="center" />
         <el-table-column label="可见性" width="90" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.visible === 0 ? 'info' : 'primary'" effect="light">
+            <el-tag
+              v-if="row.visible !== undefined && row.menuType !== 'F'"
+              :type="row.visible === 0 ? 'info' : 'primary'"
+              effect="light"
+            >
               {{ row.visible === 0 ? '隐藏' : '显示' }}
             </el-tag>
+            <span v-else>-</span>
           </template>
         </el-table-column>
         <el-table-column
@@ -314,13 +343,13 @@ onMounted(() => {
               <dt>排序</dt>
               <dd>{{ detail.sort ?? '-' }}</dd>
             </div>
-            <div>
+            <div v-if="detail.menuType !== 'F'">
               <dt>可见性</dt>
-              <dd>{{ detail.visible === 0 ? '隐藏' : '显示' }}</dd>
+              <dd>{{ formatMenuVisible(detail) }}</dd>
             </div>
-            <div>
+            <div v-if="detail.menuType === 'C'">
               <dt>打开方式</dt>
-              <dd>{{ detail.openStyle === 1 ? '外部' : '内部' }}</dd>
+              <dd>{{ formatMenuOpenStyle(detail) }}</dd>
             </div>
             <div>
               <dt>创建时间</dt>
