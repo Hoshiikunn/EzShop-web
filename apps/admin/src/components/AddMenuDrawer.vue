@@ -14,6 +14,9 @@ const emit = defineEmits<{
   created: [];
 }>();
 
+const DEFAULT_MENU_VISIBLE = 1 as const;
+const DEFAULT_MENU_OPEN_STYLE = 0 as const;
+
 type MenuForm = {
   menuType: MenuType | undefined;
   pid: MenuId;
@@ -41,8 +44,8 @@ const form = reactive<MenuForm>({
   perms: '',
   icon: '',
   sort: 0,
-  visible: undefined,
-  openStyle: undefined,
+  visible: DEFAULT_MENU_VISIBLE,
+  openStyle: DEFAULT_MENU_OPEN_STYLE,
 });
 
 interface ParentTreeNode {
@@ -169,8 +172,8 @@ function resetForm() {
   form.perms = '';
   form.icon = '';
   form.sort = 0;
-  form.visible = undefined;
-  form.openStyle = undefined;
+  form.visible = DEFAULT_MENU_VISIBLE;
+  form.openStyle = DEFAULT_MENU_OPEN_STYLE;
   void nextTick(() => formRef.value?.clearValidate());
 }
 
@@ -231,11 +234,15 @@ function clearMenuFields() {
   if (form.menuType !== 'M' && form.menuType !== 'C') {
     form.path = '';
     form.visible = undefined;
+  } else {
+    form.visible = DEFAULT_MENU_VISIBLE;
   }
 
   if (form.menuType !== 'C') {
     form.component = '';
     form.openStyle = undefined;
+  } else {
+    form.openStyle = DEFAULT_MENU_OPEN_STYLE;
   }
 
   if (form.menuType !== 'F') {
