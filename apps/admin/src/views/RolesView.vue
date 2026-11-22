@@ -420,7 +420,7 @@ async function handleRoleUpdated(roleId: RoleId) {
         </el-table-column>
         <el-table-column
           label="操作"
-          width="200"
+          width="240"
           align="center"
           header-align="center"
           fixed="right"
@@ -706,6 +706,7 @@ async function handleRoleUpdated(roleId: RoleId) {
   color: var(--ez-primary-dark);
   background: #fff;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .table-action:hover {
@@ -729,18 +730,8 @@ async function handleRoleUpdated(roleId: RoleId) {
 }
 
 .action-grid {
-  display: grid;
-  grid-template-columns: repeat(2, auto);
-  gap: 6px 8px;
+  display: flex;
   justify-content: center;
-}
-
-.action-grid .table-action:first-child {
-  transform: translateX(4px);
-}
-
-.action-grid .table-action:last-child {
-  transform: translateX(-4px);
 }
 
 .detail-body {
