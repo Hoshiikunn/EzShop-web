@@ -20,6 +20,8 @@ const editMenuVisible = ref(false);
 const editMenuId = ref<MenuId | null>(null);
 const deletingMenuId = ref<MenuId | null>(null);
 
+let detailRequestToken = 0;
+
 interface MenuTreeItem extends MenuItem {
   children?: MenuTreeItem[];
 }
@@ -93,17 +95,31 @@ async function loadMenus() {
 }
 
 async function openDetail(row: MenuItem) {
+  const requestToken = ++detailRequestToken;
+  detail.value = null;
   drawerVisible.value = true;
   detailLoading.value = true;
 
   try {
-    detail.value = await sysMenuApi.info(row.id);
+    const detailData = await sysMenuApi.info(row.id);
+
+    if (requestToken !== detailRequestToken) {
+      return;
+    }
+
+    detail.value = detailData;
   } catch (error) {
+    if (requestToken !== detailRequestToken) {
+      return;
+    }
+
     detail.value = null;
     drawerVisible.value = false;
     ElMessage.error(error instanceof Error ? error.message : '菜单详情加载失败');
   } finally {
-    detailLoading.value = false;
+    if (requestToken === detailRequestToken) {
+      detailLoading.value = false;
+    }
   }
 }
 

@@ -38,6 +38,7 @@ const submitting = ref(false);
 const menuList = ref<MenuItem[]>([]);
 const menuListLoading = ref(false);
 let loadMenuToken = 0;
+let loadMenuListToken = 0;
 
 const form = reactive<MenuForm>({
   id: '',
@@ -299,6 +300,8 @@ function clearMenuFields() {
 
 async function loadMenu(menuId: MenuId) {
   const requestToken = ++loadMenuToken;
+  resetForm();
+  menuList.value = [];
   loading.value = true;
 
   try {
@@ -324,15 +327,28 @@ async function loadMenu(menuId: MenuId) {
 }
 
 async function loadMenuList() {
+  const requestToken = ++loadMenuListToken;
   menuListLoading.value = true;
 
   try {
-    menuList.value = await sysMenuApi.list();
+    const menuListData = await sysMenuApi.list();
+
+    if (requestToken !== loadMenuListToken) {
+      return;
+    }
+
+    menuList.value = menuListData;
   } catch (error) {
+    if (requestToken !== loadMenuListToken) {
+      return;
+    }
+
     menuList.value = [];
     ElMessage.error(error instanceof Error ? error.message : '菜单列表加载失败');
   } finally {
-    menuListLoading.value = false;
+    if (requestToken === loadMenuListToken) {
+      menuListLoading.value = false;
+    }
   }
 }
 

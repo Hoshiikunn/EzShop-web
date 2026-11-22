@@ -123,6 +123,9 @@ function handleMenuCheck() {
 
 async function loadRole(roleId: string) {
   const requestToken = ++loadRoleToken;
+  resetForm();
+  menuTree.value = [];
+  menuTreeLoaded.value = false;
   loading.value = true;
   menuTreeLoading.value = true;
 

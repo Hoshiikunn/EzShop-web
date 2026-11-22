@@ -138,6 +138,8 @@ function handleCurrentChange(current: number) {
 
 async function openDetail(row: RolePageItem) {
   const requestToken = ++detailRequestToken;
+  detail.value = null;
+  menuTree.value = [];
   drawerVisible.value = true;
   detailLoading.value = true;
 
