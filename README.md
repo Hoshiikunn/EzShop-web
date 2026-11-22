@@ -4,7 +4,7 @@ EzShop [https://github.com/Hoshiikunn/EzShop](https://github.com/Hoshiikunn/EzSh
 
 ## 版本与计划
 
-- 前端版本跟随后端 `EzShop` 版本更新，当前为 `v0.0.4`。
+- 前端版本跟随后端 `EzShop` 版本更新，当前为 `v0.0.5`。
 - 新功能计划也跟随后端计划展开，先以后端接口和模块规划为基准，避免前端提前锁定未确定的契约。
 - 后台管理系统 `apps/admin` 已完成登录、用户、角色与菜单管理。
 - 前台微信小程序 `apps/weapp` 为预留目录，等待前台后端接口确定后初始化。
