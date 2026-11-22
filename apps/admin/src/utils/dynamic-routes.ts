@@ -7,11 +7,11 @@ const viewModules = import.meta.glob('../views/**/*.vue') as Record<
   () => Promise<{ default: Component }>
 >;
 
-export interface MenuRouteItem {
+export interface SidebarMenuItem {
   id: string;
   menuName: string;
-  path: string;
   icon?: string;
+  children: SidebarMenuItem[];
 }
 
 export type MenuRoute = RouteRecordRaw;
@@ -93,10 +93,10 @@ export function collectMenuPermissions(nodes: MenuTreeNode[]): string[] {
   return Array.from(new Set(permissions));
 }
 
-export function flattenVisibleMenuItems(
+export function buildSidebarTree(
   nodes: MenuTreeNode[],
   parentPath = '',
-): MenuRouteItem[] {
+): SidebarMenuItem[] {
   return nodes.flatMap((node) => {
     if (node.menuType === 'F' || node.visible !== 1) {
       return [];
@@ -105,7 +105,20 @@ export function flattenVisibleMenuItems(
     const routePath = buildMenuRoutePath(node, parentPath);
 
     if (node.menuType === 'M') {
-      return flattenVisibleMenuItems(node.children ?? [], routePath);
+      const children = buildSidebarTree(node.children ?? [], routePath);
+
+      if (children.length === 0) {
+        return [];
+      }
+
+      return [
+        {
+          id: node.id,
+          menuName: node.menuName,
+          icon: node.icon,
+          children,
+        },
+      ];
     }
 
     if (!routePath) {
@@ -118,7 +131,23 @@ export function flattenVisibleMenuItems(
         menuName: node.menuName,
         path: routePath,
         icon: node.icon,
+          children: [],
       },
     ];
+  });
+}
+
+export function collectActiveMenuIds(
+  nodes: SidebarMenuItem[],
+  activePath: string,
+): string[] {
+  return nodes.flatMap((node) => {
+    const activeChildIds = collectActiveMenuIds(node.children, activePath);
+
+    if (node.path === activePath || activeChildIds.length > 0) {
+      return [node.id, ...activeChildIds];
+    }
+
+    return [];
   });
 }

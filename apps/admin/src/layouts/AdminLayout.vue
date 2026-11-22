@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref, watchEffect } from 'vue';
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Settings, LogOut } from 'lucide-vue-next';
 import { useAuthStore } from '@/stores/auth';
 import { useNavigationStore } from '@/stores/navigation';
-import { loadMenuIconOptions, resolveMenuIcon } from '@/utils/menu-icons';
+import SidebarMenu from '@/components/SidebarMenu.vue';
+import { collectActiveMenuIds } from '@/utils/dynamic-routes';
+import { loadMenuIconOptions } from '@/utils/menu-icons';
 
 const route = useRoute();
 const router = useRouter();
@@ -14,6 +16,25 @@ const navigationStore = useNavigationStore();
 const appVersion = __APP_VERSION__;
 
 const activePath = computed(() => route.path);
+const expandedMenuIds = ref(new Set<string>());
+
+watchEffect(() => {
+  expandedMenuIds.value = new Set(
+    collectActiveMenuIds(navigationStore.sidebarItems, activePath.value),
+  );
+});
+
+function toggleMenu(id: string) {
+  const nextIds = new Set(expandedMenuIds.value);
+
+  if (nextIds.has(id)) {
+    nextIds.delete(id);
+  } else {
+    nextIds.add(id);
+  }
+
+  expandedMenuIds.value = nextIds;
+}
 
 async function handleLogout() {
   await ElMessageBox.confirm('确定要退出登录吗？', '退出登录', {
@@ -44,16 +65,12 @@ onMounted(() => {
       </RouterLink>
 
       <nav class="nav">
-        <RouterLink
-          v-for="item in navigationStore.menuItems"
-          :key="item.id"
-          :to="item.path"
-          class="nav-item"
-          :class="{ active: activePath === item.path }"
-        >
-          <component :is="resolveMenuIcon(item.icon)" :size="18" />
-          <span>{{ item.menuName }}</span>
-        </RouterLink>
+        <SidebarMenu
+          :items="navigationStore.sidebarItems"
+          :active-path="activePath"
+          :expanded-ids="expandedMenuIds"
+          @toggle="toggleMenu"
+        />
       </nav>
 
       <div class="sidebar-footer">
@@ -129,41 +146,6 @@ onMounted(() => {
 .nav {
   display: grid;
   gap: 6px;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 42px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 10px;
-  color: #626f8a;
-  text-align: left;
-  text-decoration: none;
-  background: transparent;
-  cursor: pointer;
-  transition:
-    background 0.18s ease,
-    color 0.18s ease;
-}
-
-.nav-item.active,
-.nav-item:hover {
-  color: var(--ez-primary-dark);
-  background: #eef3ff;
-}
-
-.nav-item.reserved {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.nav-item small {
-  margin-left: auto;
-  color: var(--ez-muted);
-  font-size: 11px;
 }
 
 .sidebar-footer {
@@ -269,8 +251,7 @@ onMounted(() => {
   }
 
   .nav {
-    grid-auto-flow: column;
-    overflow-x: auto;
+    overflow-y: auto;
   }
 
   .sidebar-footer {

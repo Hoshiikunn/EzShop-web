@@ -4,10 +4,10 @@ import { authApi } from '@/api/auth';
 import type { MenuTreeNode } from '@/types/api';
 import {
   buildMenuRoutes,
+  buildSidebarTree,
   collectMenuPermissions,
-  flattenVisibleMenuItems,
   type MenuRoute,
-  type MenuRouteItem,
+  type SidebarMenuItem,
 } from '@/utils/dynamic-routes';
 
 let ensurePromise: Promise<void> | null = null;
@@ -30,7 +30,7 @@ async function loadNavigation(router: Router) {
   }
 
   store.navTree = navTree;
-  store.menuItems = flattenVisibleMenuItems(navTree);
+  store.sidebarItems = buildSidebarTree(navTree);
   store.permissions = collectMenuPermissions(navTree);
   store.dynamicRoutes = routes;
   store.initialized = true;
@@ -39,7 +39,7 @@ async function loadNavigation(router: Router) {
 export const useNavigationStore = defineStore('navigation', {
   state: () => ({
     navTree: [] as MenuTreeNode[],
-    menuItems: [] as MenuRouteItem[],
+    sidebarItems: [] as SidebarMenuItem[],
     permissions: [] as string[],
     dynamicRoutes: [] as MenuRoute[],
     initialized: false,
@@ -62,7 +62,7 @@ export const useNavigationStore = defineStore('navigation', {
     reset() {
       ensurePromise = null;
       this.navTree = [];
-      this.menuItems = [];
+      this.sidebarItems = [];
       this.permissions = [];
       this.initialized = false;
     },
