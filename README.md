@@ -1,7 +1,20 @@
 # EzShop-web
 
-EzShop https://github.com/Hoshiikunn/EzShop 的单体前端仓库。该前端项目由 AI Agent GLM-5.3 + Codex 开发。
-当前已实现后台管理系统 `apps/admin` 的用户、角色与菜单管理模块；前台微信小程序 `apps/weapp` 为预留目录，等待前台后端接口确定后初始化。
+EzShop [https://github.com/Hoshiikunn/EzShop](https://github.com/Hoshiikunn/EzShop) 的单体前端仓库。该项目由 AI Agent GLM-5.3 + Codex 开发。
+
+## 版本与计划
+
+- 前端版本跟随后端 `EzShop` 版本更新，当前为 `v0.0.4`。
+- 新功能计划也跟随后端计划展开，先以后端接口和模块规划为基准，避免前端提前锁定未确定的契约。
+- 后台管理系统 `apps/admin` 已完成登录、用户、角色与菜单管理。
+- 前台微信小程序 `apps/weapp` 为预留目录，等待前台后端接口确定后初始化。
+
+## 模块结构
+
+| 目录 | 说明 | 状态 |
+| --- | --- | --- |
+| `apps/admin` | 后台管理系统，供员工操作用户、角色、菜单等 | 开发中 |
+| `apps/weapp` | 前台微信小程序，供顾客浏览商品、下单支付、评价商品 | 预留 |
 
 ## 技术栈
 
@@ -24,8 +37,9 @@ npm run dev:admin
 ## 常用命令
 
 ```bash
-npm run build:admin
-npm run test
-npm run lint
-npm run format
+npm run dev:admin     # 启动后台
+npm run build:admin   # 构建后台
+npm run test          # 运行测试
+npm run lint          # 静态检查
+npm run format        # 格式化代码
 ```
