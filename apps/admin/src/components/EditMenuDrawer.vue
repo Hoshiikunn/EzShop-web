@@ -229,7 +229,6 @@ function buildPayload(): MenuUpdatePayload {
     id: form.id,
     pid: form.pid,
     menuName: form.menuName.trim(),
-    icon,
     sort: form.sort,
   };
 
@@ -242,6 +241,7 @@ function buildPayload(): MenuUpdatePayload {
       ...common,
       menuType,
       path: form.path.trim() || undefined,
+      icon,
       visible: form.visible,
     };
   }
@@ -260,6 +260,7 @@ function buildPayload(): MenuUpdatePayload {
       menuType,
       path: form.path.trim() || undefined,
       component: form.component.trim() || undefined,
+      icon,
       visible: form.visible,
       openStyle: form.openStyle,
     };
@@ -289,6 +290,8 @@ function clearMenuFields() {
 
   if (form.menuType !== 'F') {
     form.perms = '';
+  } else {
+    form.icon = '';
   }
 
   void formRef.value?.clearValidate(['path', 'component', 'perms', 'visible', 'openStyle']);
@@ -383,6 +386,7 @@ watch(
         label-position="top"
         :model="form"
         :rules="rules"
+        :validate-on-rule-change="false"
         @submit.prevent="submitForm"
       >
         <el-form-item label="菜单 ID">
@@ -440,7 +444,7 @@ watch(
           />
         </el-form-item>
 
-        <el-form-item label="图标" prop="icon">
+        <el-form-item v-if="form.menuType !== 'F'" label="图标" prop="icon">
           <MenuIconPicker v-model="form.icon" />
         </el-form-item>
 

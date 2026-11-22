@@ -184,13 +184,13 @@ export interface MenuInfo extends MenuItem {
 export interface MenuBasePayload {
   pid: MenuId;
   menuName: string;
-  icon?: string;
   sort: number;
 }
 
 export interface MenuDirectoryPayload extends MenuBasePayload {
   menuType: 'M';
   path?: string;
+  icon?: string;
   visible: 0 | 1;
 }
 
@@ -198,6 +198,7 @@ export interface MenuPagePayload extends MenuBasePayload {
   menuType: 'C';
   path?: string;
   component?: string;
+  icon?: string;
   visible: 0 | 1;
   openStyle: 0 | 1;
 }

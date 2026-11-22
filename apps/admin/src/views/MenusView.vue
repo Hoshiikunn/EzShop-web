@@ -198,7 +198,7 @@ onMounted(() => {
             <span class="menu-name-cell">
               <component
                 :is="resolveMenuIcon(row.icon)"
-                v-if="resolveMenuIcon(row.icon)"
+                v-if="row.menuType !== 'F' && resolveMenuIcon(row.icon)"
                 :size="15"
               />
               {{ row.menuName }}
@@ -328,7 +328,10 @@ onMounted(() => {
             <div>
               <dt>图标</dt>
               <dd>
-                <span v-if="detail.icon" class="icon-display">
+                <span
+                  v-if="detail.menuType !== 'F' && detail.icon"
+                  class="icon-display"
+                >
                   <component
                     :is="resolveMenuIcon(detail.icon)"
                     v-if="resolveMenuIcon(detail.icon)"
