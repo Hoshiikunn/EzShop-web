@@ -138,6 +138,7 @@ function buildPayload(): UserUpdatePayload {
 
 async function loadUser(userId: UserId) {
   const requestToken = ++loadUserToken;
+  resetForm();
   loading.value = true;
   avatarFile.value = null;
   roleOptions.value = [];

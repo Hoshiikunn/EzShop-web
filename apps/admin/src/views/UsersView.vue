@@ -28,6 +28,8 @@ const editUserId = ref<UserId | null>(null);
 const deleting = ref(false);
 const statusUpdatingId = ref<UserId | null>(null);
 
+let detailRequestToken = 0;
+
 const selectedCount = computed(() => selectedUsers.value.length);
 
 const batchDeleteDisabled = computed(() => deleting.value || selectedCount.value === 0);
@@ -180,17 +182,31 @@ function handleCurrentChange(current: number) {
 }
 
 async function openDetail(row: UserPageItem) {
+  const requestToken = ++detailRequestToken;
+  detail.value = null;
   drawerVisible.value = true;
   detailLoading.value = true;
 
   try {
-    detail.value = await sysUserApi.info(row.id);
+    const detailData = await sysUserApi.info(row.id);
+
+    if (requestToken !== detailRequestToken) {
+      return;
+    }
+
+    detail.value = detailData;
   } catch (error) {
+    if (requestToken !== detailRequestToken) {
+      return;
+    }
+
     detail.value = null;
     drawerVisible.value = false;
     ElMessage.error(error instanceof Error ? error.message : '用户详情加载失败');
   } finally {
-    detailLoading.value = false;
+    if (requestToken === detailRequestToken) {
+      detailLoading.value = false;
+    }
   }
 }
 
