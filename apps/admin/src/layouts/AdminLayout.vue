@@ -2,18 +2,21 @@
 import { computed, onMounted, ref, watchEffect } from 'vue';
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Settings, LogOut } from 'lucide-vue-next';
+import { ChevronDown, LogOut, Settings, UserRound } from 'lucide-vue-next';
 import { useAuthStore } from '@/stores/auth';
 import { useNavigationStore } from '@/stores/navigation';
+import { profileApi } from '@/api/profile';
 import SidebarMenu from '@/components/SidebarMenu.vue';
 import { collectActiveMenuIds } from '@/utils/dynamic-routes';
 import { loadMenuIconOptions } from '@/utils/menu-icons';
+import type { ProfileInfo } from '@/types/api';
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const navigationStore = useNavigationStore();
 const appVersion = __APP_VERSION__;
+const profile = ref<ProfileInfo | null>(null);
 
 const activePath = computed(() => route.path);
 const expandedMenuIds = ref(new Set<string>());
@@ -36,6 +39,18 @@ function toggleMenu(id: string) {
   expandedMenuIds.value = nextIds;
 }
 
+const accountName = computed(() => {
+  const name = profile.value?.realName || profile.value?.username;
+
+  return name || '账号';
+});
+
+const accountInitials = computed(() => {
+  const name = profile.value?.realName || profile.value?.username || 'E';
+
+  return name.slice(0, 1).toUpperCase();
+});
+
 async function handleLogout() {
   await ElMessageBox.confirm('确定要退出登录吗？', '退出登录', {
     confirmButtonText: '退出',
@@ -48,10 +63,27 @@ async function handleLogout() {
   await router.replace('/login');
 }
 
+async function handleAccountCommand(command: string | number | object) {
+  if (command === 'profile') {
+    await router.push('/profile');
+    return;
+  }
+
+  if (command === 'logout') {
+    await handleLogout();
+  }
+}
+
 onMounted(() => {
   void navigationStore.ensureNavigation(router).catch(() => {
     ElMessage.error('导航菜单加载失败');
   });
+  void profileApi
+    .info()
+    .then((result) => {
+      profile.value = result;
+    })
+    .catch(() => undefined);
   void loadMenuIconOptions().catch(() => undefined);
 });
 </script>
@@ -91,10 +123,34 @@ onMounted(() => {
           <p>SpringBoot 后台控制台 · v{{ appVersion }}</p>
         </div>
 
-        <button class="logout-button" type="button" @click="handleLogout">
-          <LogOut :size="16" />
-          退出
-        </button>
+        <el-dropdown
+          class="account-dropdown"
+          trigger="click"
+          @command="handleAccountCommand"
+        >
+          <button class="account-button" type="button">
+            <img
+              v-if="profile?.avatarUrl"
+              class="account-avatar"
+              :src="profile.avatarUrl"
+              alt="当前用户头像"
+            />
+            <span v-else class="account-avatar">{{ accountInitials }}</span>
+            <span class="account-name">{{ accountName }}</span>
+            <ChevronDown :size="16" />
+          </button>
+
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="profile" :icon="UserRound">
+                个人中心
+              </el-dropdown-item>
+              <el-dropdown-item divided command="logout" :icon="LogOut">
+                退出登录
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </header>
 
       <main class="content">
@@ -214,12 +270,13 @@ onMounted(() => {
   font-size: 13px;
 }
 
-.logout-button {
+.account-button {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   height: 38px;
-  padding: 0 14px;
+  max-width: 220px;
+  padding: 0 10px 0 4px;
   border: 1px solid var(--ez-line);
   border-radius: 9px;
   color: #4d5a75;
@@ -228,11 +285,46 @@ onMounted(() => {
   transition:
     color 0.2s ease,
     border-color 0.2s ease;
+  outline: none;
 }
 
-.logout-button:hover {
-  color: #d2494a;
-  border-color: rgba(210, 73, 74, 0.32);
+.account-button:hover {
+  color: var(--ez-primary-dark);
+  border-color: rgba(56, 102, 242, 0.38);
+  background: #f5f8ff;
+}
+
+.account-avatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  overflow: hidden;
+  color: #fff;
+  background: var(--ez-primary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.account-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.account-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.account-dropdown :deep(.el-dropdown-menu__item) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .content {

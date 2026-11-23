@@ -23,6 +23,12 @@ const router = createRouter({
           component: () => import('@/views/DashboardView.vue'),
           meta: { title: '仪表盘' },
         },
+        {
+          path: 'profile',
+          name: 'profile',
+          component: () => import('@/views/ProfileView.vue'),
+          meta: { title: '个人中心' },
+        },
       ],
     },
     {

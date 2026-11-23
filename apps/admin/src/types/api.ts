@@ -86,6 +86,19 @@ export interface UserInitInfo {
   initPassword: string;
 }
 
+export interface ProfileInfo {
+  id: UserId;
+  username: string;
+  realName?: string;
+  avatarUrl?: string;
+  gender?: Gender;
+  mobile?: string;
+  email?: string;
+  lastLoginIp?: string;
+  lastLoginTime?: string;
+  createTime?: string;
+}
+
 export interface UserBatchDeletePayload {
   ids: UserId[];
 }
