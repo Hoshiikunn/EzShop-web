@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type TableInstance } from 'element-plus';
-import { Eye, Pencil, Power, RefreshCw, Search, Trash2, UserPlus } from 'lucide-vue-next';
+import { Copy, Eye, KeyRound, Pencil, Power, RefreshCw, Search, Trash2, UserPlus } from 'lucide-vue-next';
 import { sysUserApi } from '@/api/sys-user';
 import type {
   UserPageItem,
   UserInfo,
   UserPageQuery,
+  UserResetPasswordInfo,
   UserId,
   UserStatusPayload,
 } from '@/types/api';
@@ -27,6 +28,9 @@ const editUserVisible = ref(false);
 const editUserId = ref<UserId | null>(null);
 const deleting = ref(false);
 const statusUpdatingId = ref<UserId | null>(null);
+const resetPasswordLoading = ref(false);
+const resetPasswordResult = ref<UserResetPasswordInfo | null>(null);
+const resetPasswordResultVisible = ref(false);
 
 let detailRequestToken = 0;
 
@@ -336,6 +340,57 @@ async function changeUserStatus(user: UserPageItem, status: 0 | 1) {
   }
 }
 
+async function resetPassword() {
+  const target = detail.value;
+
+  if (!target || resetPasswordLoading.value) {
+    return;
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `确定要重置用户「${target.realName || target.username}」的密码吗？重置后将生成新的随机密码，目标用户的当前登录态会立即失效。`,
+      '重置密码',
+      {
+        confirmButtonText: '重置',
+        cancelButtonText: '取消',
+        type: 'warning',
+      },
+    );
+  } catch {
+    return;
+  }
+
+  resetPasswordLoading.value = true;
+
+  try {
+    resetPasswordResult.value = await sysUserApi.resetPassword(target.id);
+    resetPasswordResultVisible.value = true;
+    ElMessage.success('重置成功');
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '密码重置失败');
+  } finally {
+    resetPasswordLoading.value = false;
+  }
+}
+
+async function copyResetPasswordValue(field: 'username' | 'password') {
+  const result = resetPasswordResult.value;
+
+  if (!result) {
+    return;
+  }
+
+  const value = field === 'username' ? result.username : result.resetPassword;
+
+  try {
+    await navigator.clipboard.writeText(value);
+    ElMessage.success(field === 'username' ? '用户名已复制' : '重置密码已复制');
+  } catch {
+    ElMessage.error('复制失败，请手动复制');
+  }
+}
+
 onMounted(loadUsers);
 </script>
 
@@ -545,6 +600,15 @@ onMounted(loadUsers);
               编辑
             </button>
             <button
+              class="detail-action-button reset-password-action"
+              type="button"
+              :disabled="resetPasswordLoading || detail.isSuperAdmin === 1"
+              @click="resetPassword"
+            >
+              <KeyRound :size="15" />
+              重置密码
+            </button>
+            <button
               class="detail-action-button status-action"
               type="button"
               :disabled="statusUpdatingId === detail.id || deleting"
@@ -620,6 +684,45 @@ onMounted(loadUsers);
         </template>
       </div>
     </el-drawer>
+
+    <el-dialog
+      v-model="resetPasswordResultVisible"
+      title="密码重置成功"
+      width="440px"
+      destroy-on-close
+      @closed="resetPasswordResult = null"
+    >
+      <div v-if="resetPasswordResult" class="reset-password-result">
+        <p>重置密码仅展示一次，请复制并妥善转交用户。</p>
+
+        <dl class="reset-password-info">
+          <div>
+            <dt>用户名</dt>
+            <dd>
+              <code>{{ resetPasswordResult.username }}</code>
+              <button type="button" @click="copyResetPasswordValue('username')">
+                <Copy :size="15" />
+                复制
+              </button>
+            </dd>
+          </div>
+          <div>
+            <dt>重置密码</dt>
+            <dd>
+              <code>{{ resetPasswordResult.resetPassword }}</code>
+              <button type="button" @click="copyResetPasswordValue('password')">
+                <Copy :size="15" />
+                复制
+              </button>
+            </dd>
+          </div>
+        </dl>
+
+        <div class="reset-password-actions">
+          <button type="button" @click="resetPasswordResultVisible = false">我知道了</button>
+        </div>
+      </div>
+    </el-dialog>
 
     <CreateUserDrawer v-model="createUserVisible" @created="loadUsers" />
     <EditUserDrawer v-model="editUserVisible" :user-id="editUserId" @updated="handleUserUpdated" />
@@ -849,6 +952,7 @@ onMounted(loadUsers);
 .detail-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
   padding-bottom: 18px;
@@ -895,6 +999,100 @@ onMounted(loadUsers);
 .detail-action-button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+.reset-password-action {
+  color: #8a6116;
+}
+
+.reset-password-action:hover:not(:disabled) {
+  border-color: rgba(138, 97, 22, 0.38);
+  color: #8a6116;
+  background: #fff8e6;
+}
+
+.reset-password-result > p {
+  margin: 0;
+  color: var(--ez-muted);
+  text-align: center;
+}
+
+.reset-password-info {
+  width: 100%;
+  margin: 18px 0 0;
+}
+
+.reset-password-info div {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--ez-line);
+}
+
+.reset-password-info div:last-child {
+  border-bottom: 0;
+}
+
+.reset-password-info dt {
+  color: var(--ez-muted);
+}
+
+.reset-password-info dd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  min-width: 0;
+}
+
+.reset-password-info code {
+  flex: 1;
+  padding: 9px 12px;
+  overflow-wrap: anywhere;
+  border: 1px solid var(--ez-line);
+  border-radius: 8px;
+  background: #f7f9ff;
+}
+
+.reset-password-info button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--ez-line);
+  border-radius: 7px;
+  color: var(--ez-primary-dark);
+  background: #fff;
+  cursor: pointer;
+}
+
+.reset-password-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 6px;
+}
+
+.reset-password-actions button {
+  height: 34px;
+  padding: 0 16px;
+  border: 1px solid var(--ez-primary);
+  border-radius: 8px;
+  color: #fff;
+  background: var(--ez-primary);
+  font-weight: 650;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.reset-password-actions button:hover {
+  border-color: var(--ez-primary-dark);
+  background: var(--ez-primary-dark);
 }
 
 .avatar {
@@ -960,6 +1158,24 @@ onMounted(loadUsers);
 
   .pagination-row {
     justify-content: center;
+  }
+
+  .reset-password-info div {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .reset-password-info dd {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .reset-password-actions {
+    flex-direction: column-reverse;
+  }
+
+  .reset-password-actions button {
+    width: 100%;
   }
 }
 </style>
