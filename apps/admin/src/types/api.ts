@@ -86,6 +86,11 @@ export interface UserInitInfo {
   initPassword: string;
 }
 
+export interface UserResetPasswordInfo {
+  username: string;
+  resetPassword: string;
+}
+
 export interface ProfileInfo {
   id: UserId;
   username: string;

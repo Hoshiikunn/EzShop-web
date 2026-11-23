@@ -7,6 +7,7 @@ import type {
   UserId,
   UserCreatePayload,
   UserInitInfo,
+  UserResetPasswordInfo,
   UserUpdatePayload,
   UserBatchDeletePayload,
   UserStatusPayload,
@@ -52,6 +53,12 @@ export const sysUserApi = {
       url: '/admin/sys/user/change/status',
       method: 'post',
       data: payload,
+    });
+  },
+  resetPassword(id: UserId) {
+    return requestJson<UserResetPasswordInfo>({
+      url: `/admin/sys/user/${id}/reset/password`,
+      method: 'post',
     });
   },
 };
