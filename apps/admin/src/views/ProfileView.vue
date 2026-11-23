@@ -5,6 +5,7 @@ import { RefreshCw } from 'lucide-vue-next';
 import { useRouter } from 'vue-router';
 import { profileApi } from '@/api/profile';
 import { useAuthStore } from '@/stores/auth';
+import UserAvatar from '@/components/UserAvatar.vue';
 import type { ProfileChangePasswordPayload, ProfileInfo } from '@/types/api';
 import { formatDateTime } from '@/utils/format';
 
@@ -64,12 +65,6 @@ const displayName = computed(() => {
   const name = profile.value?.realName || profile.value?.username;
 
   return name || '-';
-});
-
-const avatarInitials = computed(() => {
-  const name = profile.value?.realName || profile.value?.username || '-';
-
-  return name.slice(0, 1).toUpperCase();
 });
 
 function text(value?: string | null): string {
@@ -163,13 +158,12 @@ onMounted(() => {
     <div v-loading="profileLoading" class="panel profile-panel">
       <template v-if="profile">
         <div class="profile-header">
-          <img
-            v-if="profile.avatarUrl"
-            class="profile-avatar"
+          <UserAvatar
             :src="profile.avatarUrl"
+            :name="profile.realName || profile.username"
+            :size="68"
             alt="当前用户头像"
           />
-          <span v-else class="profile-avatar">{{ avatarInitials }}</span>
 
           <div class="profile-heading">
             <h2>{{ displayName }}</h2>
@@ -324,25 +318,6 @@ onMounted(() => {
   gap: 16px;
   padding-bottom: 22px;
   border-bottom: 1px solid var(--ez-line);
-}
-
-.profile-avatar {
-  display: grid;
-  place-items: center;
-  width: 68px;
-  height: 68px;
-  border-radius: 50%;
-  overflow: hidden;
-  color: #fff;
-  background: var(--ez-primary);
-  font-size: 28px;
-  font-weight: 800;
-}
-
-.profile-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 
 .profile-heading h2 {

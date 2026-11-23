@@ -14,6 +14,7 @@ import type {
 import { formatDateTime } from '@/utils/format';
 import CreateUserDrawer from '@/components/CreateUserDrawer.vue';
 import EditUserDrawer from '@/components/EditUserDrawer.vue';
+import UserAvatar from '@/components/UserAvatar.vue';
 
 const users = ref<UserPageItem[]>([]);
 const total = ref(0);
@@ -585,9 +586,12 @@ onMounted(loadUsers);
       <div v-loading="detailLoading" class="detail-body">
         <template v-if="detail">
           <div class="detail-profile">
-            <div class="avatar">
-              {{ detail.username.slice(0, 1).toUpperCase() }}
-            </div>
+            <UserAvatar
+              :src="detail.avatarUrl"
+              :name="detail.realName || detail.username"
+              :size="52"
+              alt="用户头像"
+            />
             <div>
               <strong>{{ detail.realName || detail.username }}</strong>
               <span>{{ detail.username }}</span>
@@ -1093,18 +1097,6 @@ onMounted(loadUsers);
 .reset-password-actions button:hover {
   border-color: var(--ez-primary-dark);
   background: var(--ez-primary-dark);
-}
-
-.avatar {
-  display: grid;
-  place-items: center;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  color: #fff;
-  background: var(--ez-primary);
-  font-size: 21px;
-  font-weight: 800;
 }
 
 .detail-profile strong {

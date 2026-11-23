@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useNavigationStore } from '@/stores/navigation';
 import { profileApi } from '@/api/profile';
 import SidebarMenu from '@/components/SidebarMenu.vue';
+import UserAvatar from '@/components/UserAvatar.vue';
 import { collectActiveMenuIds } from '@/utils/dynamic-routes';
 import { loadMenuIconOptions } from '@/utils/menu-icons';
 import type { ProfileInfo } from '@/types/api';
@@ -43,12 +44,6 @@ const accountName = computed(() => {
   const name = profile.value?.realName || profile.value?.username;
 
   return name || '账号';
-});
-
-const accountInitials = computed(() => {
-  const name = profile.value?.realName || profile.value?.username || 'E';
-
-  return name.slice(0, 1).toUpperCase();
 });
 
 async function handleLogout() {
@@ -129,13 +124,12 @@ onMounted(() => {
           @command="handleAccountCommand"
         >
           <button class="account-button" type="button">
-            <img
-              v-if="profile?.avatarUrl"
-              class="account-avatar"
-              :src="profile.avatarUrl"
+            <UserAvatar
+              :src="profile?.avatarUrl"
+              :name="profile?.realName || profile?.username"
+              :size="30"
               alt="当前用户头像"
             />
-            <span v-else class="account-avatar">{{ accountInitials }}</span>
             <span class="account-name">{{ accountName }}</span>
             <ChevronDown :size="16" />
           </button>
@@ -292,25 +286,6 @@ onMounted(() => {
   color: var(--ez-primary-dark);
   border-color: rgba(56, 102, 242, 0.38);
   background: #f5f8ff;
-}
-
-.account-avatar {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  overflow: hidden;
-  color: #fff;
-  background: var(--ez-primary);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.account-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 
 .account-name {
