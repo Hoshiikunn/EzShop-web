@@ -99,6 +99,11 @@ export interface ProfileInfo {
   createTime?: string;
 }
 
+export interface ProfileChangePasswordPayload {
+  oldPassword: string;
+  newPassword: string;
+}
+
 export interface UserBatchDeletePayload {
   ids: UserId[];
 }
