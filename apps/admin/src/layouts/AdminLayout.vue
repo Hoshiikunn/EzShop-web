@@ -1,23 +1,24 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watchEffect } from 'vue';
+import { storeToRefs } from 'pinia';
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { ChevronDown, LogOut, Settings, UserRound } from 'lucide-vue-next';
 import { useAuthStore } from '@/stores/auth';
 import { useNavigationStore } from '@/stores/navigation';
-import { profileApi } from '@/api/profile';
 import SidebarMenu from '@/components/SidebarMenu.vue';
 import UserAvatar from '@/components/UserAvatar.vue';
 import { collectActiveMenuIds } from '@/utils/dynamic-routes';
 import { loadMenuIconOptions } from '@/utils/menu-icons';
-import type { ProfileInfo } from '@/types/api';
+import { useProfileStore } from '@/stores/profile';
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const navigationStore = useNavigationStore();
 const appVersion = __APP_VERSION__;
-const profile = ref<ProfileInfo | null>(null);
+const profileStore = useProfileStore();
+const { profile } = storeToRefs(profileStore);
 
 const activePath = computed(() => route.path);
 const expandedMenuIds = ref(new Set<string>());
@@ -73,12 +74,7 @@ onMounted(() => {
   void navigationStore.ensureNavigation(router).catch(() => {
     ElMessage.error('导航菜单加载失败');
   });
-  void profileApi
-    .info()
-    .then((result) => {
-      profile.value = result;
-    })
-    .catch(() => undefined);
+  void profileStore.fetchProfile().catch(() => undefined);
   void loadMenuIconOptions().catch(() => undefined);
 });
 </script>

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { authApi } from '@/api/auth';
 import { tokenStorage } from '@/utils/token-storage';
 import { useNavigationStore } from '@/stores/navigation';
+import { useProfileStore } from '@/stores/profile';
 import type { LoginPayload } from '@/types/api';
 
 export const useAuthStore = defineStore('auth', {
@@ -29,6 +30,7 @@ export const useAuthStore = defineStore('auth', {
         this.token = null;
         this.expiresAt = null;
         useNavigationStore().reset();
+        useProfileStore().clearProfile();
       }
     },
     clearLocalSession() {
@@ -36,6 +38,7 @@ export const useAuthStore = defineStore('auth', {
       this.token = null;
       this.expiresAt = null;
       useNavigationStore().reset();
+      useProfileStore().clearProfile();
     },
   },
 });
