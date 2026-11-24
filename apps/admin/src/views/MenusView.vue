@@ -9,6 +9,7 @@ import { loadMenuIconOptions, resolveMenuIcon } from '@/utils/menu-icons';
 import { getMenuTypeLabel, getMenuTypeTagType } from '@/utils/menu-types';
 import AddMenuDrawer from '@/components/AddMenuDrawer.vue';
 import EditMenuDrawer from '@/components/EditMenuDrawer.vue';
+import { usePermissionStore } from '@/stores/permissions';
 
 const menus = ref<MenuItem[]>([]);
 const tableLoading = ref(false);
@@ -19,6 +20,16 @@ const addMenuVisible = ref(false);
 const editMenuVisible = ref(false);
 const editMenuId = ref<MenuId | null>(null);
 const deletingMenuId = ref<MenuId | null>(null);
+const permissionStore = usePermissionStore();
+
+const canQueryMenus = computed(() => permissionStore.hasPermission('sys:menu:list'));
+const canViewMenuDetails = computed(() => permissionStore.hasPermission('sys:menu:info'));
+const canAddMenu = computed(() => permissionStore.hasPermission('sys:menu:add'));
+const canEditMenu = computed(() => permissionStore.hasPermission('sys:menu:update'));
+const canDeleteMenu = computed(() => permissionStore.hasPermission('sys:menu:delete'));
+const canShowMenuActions = computed(
+  () => canViewMenuDetails.value || canEditMenu.value || canDeleteMenu.value,
+);
 
 let detailRequestToken = 0;
 
@@ -83,6 +94,10 @@ function formatMenuOpenStyle(menu: MenuInfo): string {
 }
 
 async function loadMenus() {
+  if (!canQueryMenus.value) {
+    return;
+  }
+
   tableLoading.value = true;
 
   try {
@@ -95,6 +110,10 @@ async function loadMenus() {
 }
 
 async function openDetail(row: MenuItem) {
+  if (!canViewMenuDetails.value) {
+    return;
+  }
+
   const requestToken = ++detailRequestToken;
   detail.value = null;
   drawerVisible.value = true;
@@ -141,6 +160,10 @@ async function handleMenuUpdated(menuId: MenuId) {
 }
 
 async function deleteMenu(menu: MenuItem | MenuInfo) {
+  if (!canDeleteMenu.value) {
+    return;
+  }
+
   if (deletingMenuId.value) {
     return;
   }
@@ -179,7 +202,10 @@ async function deleteMenu(menu: MenuItem | MenuInfo) {
 }
 
 onMounted(() => {
-  void loadMenus();
+  if (canQueryMenus.value) {
+    void loadMenus();
+  }
+
   void loadMenuIconOptions().catch(() => undefined);
 });
 </script>
@@ -190,7 +216,12 @@ onMounted(() => {
       <div class="table-header">
         <h2>菜单列表</h2>
         <div class="header-actions">
-          <button class="create-button" type="button" @click="addMenuVisible = true">
+          <button
+            v-if="canAddMenu"
+            class="create-button"
+            type="button"
+            @click="addMenuVisible = true"
+          >
             <Plus :size="16" />
             添加菜单
           </button>
@@ -252,6 +283,7 @@ onMounted(() => {
           </template>
         </el-table-column>
         <el-table-column
+          v-if="canShowMenuActions"
           label="操作"
           width="240"
           align="center"
@@ -260,15 +292,26 @@ onMounted(() => {
         >
           <template #default="{ row }">
             <div class="action-grid">
-              <button class="table-action" type="button" @click.stop="openDetail(row)">
+              <button
+                v-if="canViewMenuDetails"
+                class="table-action"
+                type="button"
+                @click.stop="openDetail(row)"
+              >
                 <Eye :size="15" />
                 <span>详情</span>
               </button>
-              <button class="table-action" type="button" @click.stop="openEditor(row.id)">
+              <button
+                v-if="canEditMenu"
+                class="table-action"
+                type="button"
+                @click.stop="openEditor(row.id)"
+              >
                 <Pencil :size="15" />
                 <span>编辑</span>
               </button>
               <button
+                v-if="canDeleteMenu"
                 class="table-action delete-action"
                 type="button"
                 :disabled="deletingMenuId === row.id"
@@ -297,11 +340,17 @@ onMounted(() => {
           </div>
 
           <div class="detail-actions">
-            <button class="detail-action-button" type="button" @click="openEditor(detail.id)">
+            <button
+              v-if="canEditMenu"
+              class="detail-action-button"
+              type="button"
+              @click="openEditor(detail.id)"
+            >
               <Pencil :size="15" />
               编辑
             </button>
             <button
+              v-if="canDeleteMenu"
               class="detail-action-button delete-action"
               type="button"
               :disabled="deletingMenuId === detail.id"

@@ -19,6 +19,7 @@ import { formatDateTime } from '@/utils/format';
 import { getMenuTypeLabel, getMenuTypeTagType } from '@/utils/menu-types';
 import AddRoleDrawer from '@/components/AddRoleDrawer.vue';
 import EditRoleDrawer from '@/components/EditRoleDrawer.vue';
+import { usePermissionStore } from '@/stores/permissions';
 
 const roles = ref<RolePageItem[]>([]);
 const total = ref(0);
@@ -32,6 +33,21 @@ const editRoleVisible = ref(false);
 const editRoleId = ref<RoleId | null>(null);
 const deletingRoleId = ref<RoleId | null>(null);
 const statusChangingId = ref<RoleId | null>(null);
+const permissionStore = usePermissionStore();
+
+const canQueryRoles = computed(() => permissionStore.hasPermission('sys:role:query'));
+const canViewRoleDetails = computed(() => permissionStore.hasPermission('sys:role:info'));
+const canAddRole = computed(() => permissionStore.hasPermission('sys:role:add'));
+const canEditRole = computed(() => permissionStore.hasPermission('sys:role:update'));
+const canDeleteRole = computed(() => permissionStore.hasPermission('sys:role:delete'));
+const canChangeRoleStatus = computed(() => permissionStore.hasPermission('sys:role:status'));
+const canShowRoleActions = computed(
+  () =>
+    canViewRoleDetails.value ||
+    canEditRole.value ||
+    canDeleteRole.value ||
+    canChangeRoleStatus.value,
+);
 
 const ROLE_HAS_USERS_CODE = 103004;
 
@@ -98,6 +114,10 @@ function buildParams(): RolePageQuery {
 }
 
 async function loadRoles() {
+  if (!canQueryRoles.value) {
+    return;
+  }
+
   tableLoading.value = true;
 
   try {
@@ -137,6 +157,10 @@ function handleCurrentChange(current: number) {
 }
 
 async function openDetail(row: RolePageItem) {
+  if (!canViewRoleDetails.value) {
+    return;
+  }
+
   const requestToken = ++detailRequestToken;
   detail.value = null;
   menuTree.value = [];
@@ -197,6 +221,10 @@ async function beforeRoleStatusChange(role: RolePageItem | RoleInfo): Promise<bo
 }
 
 async function changeRoleStatus(role: RolePageItem | RoleInfo, status: RoleStatus) {
+  if (!canChangeRoleStatus.value) {
+    return;
+  }
+
   if (statusChangingId.value) {
     return;
   }
@@ -219,6 +247,10 @@ async function changeRoleStatus(role: RolePageItem | RoleInfo, status: RoleStatu
 }
 
 async function deleteRole(role: RolePageItem | RoleInfo, force = false) {
+  if (!canDeleteRole.value) {
+    return;
+  }
+
   if (deletingRoleId.value) {
     return;
   }
@@ -375,7 +407,12 @@ async function handleRoleUpdated(roleId: RoleId) {
     <div class="panel table-panel">
       <div class="table-header">
         <h2>角色列表</h2>
-        <button class="create-button" type="button" @click="addRoleVisible = true">
+        <button
+          v-if="canAddRole"
+          class="create-button"
+          type="button"
+          @click="addRoleVisible = true"
+        >
           <Plus :size="16" />
           添加角色
         </button>
@@ -400,6 +437,7 @@ async function handleRoleUpdated(roleId: RoleId) {
           <template #default="{ row }">
             <div class="status-cell" @click.stop>
               <el-switch
+                v-if="canChangeRoleStatus"
                 :model-value="row.status"
                 :active-value="1"
                 :inactive-value="0"
@@ -409,6 +447,13 @@ async function handleRoleUpdated(roleId: RoleId) {
                 :disabled="statusChangingId === row.id || deletingRoleId === row.id"
                 @change="(value: RoleStatus) => changeRoleStatus(row, value)"
               />
+              <el-tag
+                v-else
+                :type="row.status === 1 ? 'success' : 'danger'"
+                effect="light"
+              >
+                {{ row.status === 1 ? '启用' : '禁用' }}
+              </el-tag>
             </div>
           </template>
         </el-table-column>
@@ -419,6 +464,7 @@ async function handleRoleUpdated(roleId: RoleId) {
           </template>
         </el-table-column>
         <el-table-column
+          v-if="canShowRoleActions"
           label="操作"
           width="240"
           align="center"
@@ -427,15 +473,26 @@ async function handleRoleUpdated(roleId: RoleId) {
         >
           <template #default="{ row }">
             <div class="action-grid">
-              <button class="table-action" type="button" @click.stop="openDetail(row)">
+              <button
+                v-if="canViewRoleDetails"
+                class="table-action"
+                type="button"
+                @click.stop="openDetail(row)"
+              >
                 <Eye :size="15" />
                 <span>详情</span>
               </button>
-              <button class="table-action" type="button" @click.stop="openEditor(row.id)">
+              <button
+                v-if="canEditRole"
+                class="table-action"
+                type="button"
+                @click.stop="openEditor(row.id)"
+              >
                 <Pencil :size="15" />
                 <span>编辑</span>
               </button>
               <button
+                v-if="canDeleteRole"
                 class="table-action delete-action"
                 type="button"
                 :disabled="deletingRoleId === row.id"
@@ -476,11 +533,17 @@ async function handleRoleUpdated(roleId: RoleId) {
           </div>
 
           <div class="detail-actions">
-            <button class="detail-action-button" type="button" @click="openEditor(detail.id)">
+            <button
+              v-if="canEditRole"
+              class="detail-action-button"
+              type="button"
+              @click="openEditor(detail.id)"
+            >
               <Pencil :size="15" />
               编辑
             </button>
             <button
+              v-if="canDeleteRole"
               class="detail-action-button delete-action"
               type="button"
               :disabled="deletingRoleId === detail.id"

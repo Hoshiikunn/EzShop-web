@@ -11,11 +11,13 @@ import UserAvatar from '@/components/UserAvatar.vue';
 import { collectActiveMenuIds } from '@/utils/dynamic-routes';
 import { loadMenuIconOptions } from '@/utils/menu-icons';
 import { useProfileStore } from '@/stores/profile';
+import { usePermissionStore } from '@/stores/permissions';
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const navigationStore = useNavigationStore();
+const permissionStore = usePermissionStore();
 const appVersion = __APP_VERSION__;
 const profileStore = useProfileStore();
 const { profile } = storeToRefs(profileStore);
@@ -73,6 +75,9 @@ async function handleAccountCommand(command: string | number | object) {
 onMounted(() => {
   void navigationStore.ensureNavigation(router).catch(() => {
     ElMessage.error('导航菜单加载失败');
+  });
+  void permissionStore.fetchPermissions().catch(() => {
+    ElMessage.error('权限标识加载失败');
   });
   void profileStore.fetchProfile().catch(() => undefined);
   void loadMenuIconOptions().catch(() => undefined);

@@ -18,6 +18,12 @@ export const profileApi = {
       method: 'get',
     });
   },
+  permissions() {
+    return requestJson<string[]>({
+      url: '/admin/profile/permissions',
+      method: 'get',
+    });
+  },
   changePassword(payload: ProfileChangePasswordPayload) {
     return requestJson<null>({
       url: '/admin/profile/change/password',
