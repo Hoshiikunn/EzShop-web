@@ -76,7 +76,7 @@ onMounted(() => {
   void navigationStore.ensureNavigation(router).catch(() => {
     ElMessage.error('导航菜单加载失败');
   });
-  void permissionStore.fetchPermissions().catch(() => {
+  void permissionStore.ensurePermissions().catch(() => {
     ElMessage.error('权限标识加载失败');
   });
   void profileStore.fetchProfile().catch(() => undefined);
