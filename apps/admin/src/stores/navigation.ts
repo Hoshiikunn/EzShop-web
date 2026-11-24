@@ -5,7 +5,6 @@ import type { MenuTreeNode } from '@/types/api';
 import {
   buildMenuRoutes,
   buildSidebarTree,
-  collectMenuPermissions,
   type MenuRoute,
   type SidebarMenuItem,
 } from '@/utils/dynamic-routes';
@@ -31,7 +30,6 @@ async function loadNavigation(router: Router) {
 
   store.navTree = navTree;
   store.sidebarItems = buildSidebarTree(navTree);
-  store.permissions = collectMenuPermissions(navTree);
   store.dynamicRoutes = routes;
   store.initialized = true;
 }
@@ -40,7 +38,6 @@ export const useNavigationStore = defineStore('navigation', {
   state: () => ({
     navTree: [] as MenuTreeNode[],
     sidebarItems: [] as SidebarMenuItem[],
-    permissions: [] as string[],
     dynamicRoutes: [] as MenuRoute[],
     initialized: false,
   }),
@@ -63,7 +60,6 @@ export const useNavigationStore = defineStore('navigation', {
       ensurePromise = null;
       this.navTree = [];
       this.sidebarItems = [];
-      this.permissions = [];
       this.initialized = false;
     },
   },

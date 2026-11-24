@@ -10,6 +10,7 @@ const viewModules = import.meta.glob('../views/**/*.vue') as Record<
 export interface SidebarMenuItem {
   id: string;
   menuName: string;
+  path?: string;
   icon?: string;
   children: SidebarMenuItem[];
 }
@@ -82,15 +83,6 @@ export function buildMenuRoutes(nodes: MenuTreeNode[], parentPath = ''): MenuRou
       } satisfies RouteRecordRaw,
     ];
   });
-}
-
-export function collectMenuPermissions(nodes: MenuTreeNode[]): string[] {
-  const permissions = nodes.flatMap((node) => [
-    ...(node.menuType === 'F' && node.perms ? [node.perms] : []),
-    ...collectMenuPermissions(node.children ?? []),
-  ]);
-
-  return Array.from(new Set(permissions));
 }
 
 export function buildSidebarTree(

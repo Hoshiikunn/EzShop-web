@@ -15,6 +15,7 @@ import { formatDateTime } from '@/utils/format';
 import CreateUserDrawer from '@/components/CreateUserDrawer.vue';
 import EditUserDrawer from '@/components/EditUserDrawer.vue';
 import UserAvatar from '@/components/UserAvatar.vue';
+import { usePermissionStore } from '@/stores/permissions';
 
 const users = ref<UserPageItem[]>([]);
 const total = ref(0);
@@ -32,7 +33,25 @@ const statusUpdatingId = ref<UserId | null>(null);
 const resetPasswordLoading = ref(false);
 const resetPasswordResult = ref<UserResetPasswordInfo | null>(null);
 const resetPasswordResultVisible = ref(false);
+const permissionStore = usePermissionStore();
 
+const canQueryUsers = computed(() => permissionStore.hasPermission('sys:user:query'));
+const canViewUserDetails = computed(() => permissionStore.hasPermission('sys:user:info'));
+const canAddUser = computed(() => permissionStore.hasPermission('sys:user:add'));
+const canEditUser = computed(() => permissionStore.hasPermission('sys:user:update'));
+const canChangeUserStatus = computed(() => permissionStore.hasPermission('sys:user:status'));
+const canDeleteUser = computed(() => permissionStore.hasPermission('sys:user:delete'));
+const canResetUserPassword = computed(() =>
+  permissionStore.hasPermission('sys:user:reset-password'),
+);
+const canShowUserActions = computed(
+  () =>
+    canViewUserDetails.value ||
+    canEditUser.value ||
+    canChangeUserStatus.value ||
+    canDeleteUser.value ||
+    canResetUserPassword.value,
+);
 let detailRequestToken = 0;
 
 const selectedCount = computed(() => selectedUsers.value.length);
@@ -141,6 +160,10 @@ function buildParams(): UserPageQuery {
 }
 
 async function loadUsers() {
+  if (!canQueryUsers.value) {
+    return;
+  }
+
   if (!validateUserIdFilter()) {
     return;
   }
@@ -187,6 +210,10 @@ function handleCurrentChange(current: number) {
 }
 
 async function openDetail(row: UserPageItem) {
+  if (!canViewUserDetails.value) {
+    return;
+  }
+
   const requestToken = ++detailRequestToken;
   detail.value = null;
   drawerVisible.value = true;
@@ -252,6 +279,10 @@ function buildDeleteConfirmMessage(users: UserPageItem[]): string {
 }
 
 async function confirmDeleteUsers(users: UserPageItem[]) {
+  if (!canDeleteUser.value) {
+    return;
+  }
+
   const ids = users.map((user) => user.id);
 
   if (ids.length === 0) {
@@ -304,6 +335,10 @@ async function confirmDeleteUsers(users: UserPageItem[]) {
 }
 
 async function changeUserStatus(user: UserPageItem, status: 0 | 1) {
+  if (!canChangeUserStatus.value) {
+    return;
+  }
+
   if (user.status === status || statusUpdatingId.value) {
     return;
   }
@@ -342,6 +377,10 @@ async function changeUserStatus(user: UserPageItem, status: 0 | 1) {
 }
 
 async function resetPassword() {
+  if (!canResetUserPassword.value) {
+    return;
+  }
+
   const target = detail.value;
 
   if (!target || resetPasswordLoading.value) {
@@ -483,6 +522,7 @@ onMounted(loadUsers);
         <h2>用户列表</h2>
         <div class="header-actions">
           <button
+            v-if="canDeleteUser"
             class="danger-button"
             type="button"
             :disabled="batchDeleteDisabled"
@@ -491,7 +531,12 @@ onMounted(loadUsers);
             <Trash2 :size="16" />
             删除所选{{ selectedCount ? `（${selectedCount}）` : '' }}
           </button>
-          <button class="create-button" type="button" @click="createUserVisible = true">
+          <button
+            v-if="canAddUser"
+            class="create-button"
+            type="button"
+            @click="createUserVisible = true"
+          >
             <UserPlus :size="16" />
             添加用户
           </button>
@@ -507,7 +552,7 @@ onMounted(loadUsers);
         @selection-change="handleSelectionChange"
         @row-click="openDetail"
       >
-        <el-table-column type="selection" width="44" />
+        <el-table-column v-if="canDeleteUser" type="selection" width="44" />
         <el-table-column prop="id" label="ID" min-width="90" />
         <el-table-column prop="username" label="用户名" min-width="140" show-overflow-tooltip />
         <el-table-column prop="realName" label="真实姓名" min-width="130" show-overflow-tooltip />
@@ -530,6 +575,7 @@ onMounted(loadUsers);
           </template>
         </el-table-column>
         <el-table-column
+          v-if="canShowUserActions"
           label="操作"
           width="180"
           align="center"
@@ -538,15 +584,26 @@ onMounted(loadUsers);
         >
           <template #default="{ row }">
             <div class="action-grid">
-              <button class="table-action" type="button" @click.stop="openDetail(row)">
+              <button
+                v-if="canViewUserDetails"
+                class="table-action"
+                type="button"
+                @click.stop="openDetail(row)"
+              >
                 <Eye :size="15" />
                 <span>详情</span>
               </button>
-              <button class="table-action" type="button" @click.stop="openEditor(row.id)">
+              <button
+                v-if="canEditUser"
+                class="table-action"
+                type="button"
+                @click.stop="openEditor(row.id)"
+              >
                 <Pencil :size="15" />
                 <span>编辑</span>
               </button>
               <button
+                v-if="canChangeUserStatus"
                 class="table-action status-action"
                 type="button"
                 :disabled="statusUpdatingId === row.id || deleting"
@@ -556,6 +613,7 @@ onMounted(loadUsers);
                 <span>{{ row.status === 1 ? '禁用' : '启用' }}</span>
               </button>
               <button
+                v-if="canDeleteUser"
                 class="table-action delete-action"
                 type="button"
                 :disabled="deleting"
@@ -599,20 +657,27 @@ onMounted(loadUsers);
           </div>
 
           <div class="detail-actions">
-            <button class="detail-action-button" type="button" @click="openEditor(detail.id)">
+            <button
+              v-if="canEditUser"
+              class="detail-action-button"
+              type="button"
+              @click="openEditor(detail.id)"
+            >
               <Pencil :size="15" />
               编辑
             </button>
             <button
+              v-if="canResetUserPassword && detail.isSuperAdmin !== 1"
               class="detail-action-button reset-password-action"
               type="button"
-              :disabled="resetPasswordLoading || detail.isSuperAdmin === 1"
+              :disabled="resetPasswordLoading"
               @click="resetPassword"
             >
               <KeyRound :size="15" />
               重置密码
             </button>
             <button
+              v-if="canChangeUserStatus"
               class="detail-action-button status-action"
               type="button"
               :disabled="statusUpdatingId === detail.id || deleting"
@@ -622,6 +687,7 @@ onMounted(loadUsers);
               {{ detail.status === 1 ? '禁用' : '启用' }}
             </button>
             <button
+              v-if="canDeleteUser"
               class="detail-action-button delete-action"
               type="button"
               :disabled="deleting"
