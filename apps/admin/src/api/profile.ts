@@ -1,5 +1,9 @@
 import { requestJson } from '@/api/client';
-import type { ProfileChangePasswordPayload, ProfileInfo } from '@/types/api';
+import type {
+  ProfileChangePasswordPayload,
+  ProfileChangeUsernamePayload,
+  ProfileInfo,
+} from '@/types/api';
 
 export const profileApi = {
   info() {
@@ -17,6 +21,13 @@ export const profileApi = {
   changePassword(payload: ProfileChangePasswordPayload) {
     return requestJson<null>({
       url: '/admin/profile/change/password',
+      method: 'put',
+      data: payload,
+    });
+  },
+  changeUsername(payload: ProfileChangeUsernamePayload) {
+    return requestJson<null>({
+      url: '/admin/profile/change/username',
       method: 'put',
       data: payload,
     });

@@ -1,25 +1,43 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { storeToRefs } from 'pinia';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import { RefreshCw } from 'lucide-vue-next';
 import { useRouter } from 'vue-router';
 import { profileApi } from '@/api/profile';
 import { useAuthStore } from '@/stores/auth';
+import { useProfileStore } from '@/stores/profile';
 import UserAvatar from '@/components/UserAvatar.vue';
-import type { ProfileChangePasswordPayload, ProfileInfo } from '@/types/api';
+import type { ProfileChangePasswordPayload, ProfileChangeUsernamePayload } from '@/types/api';
 import { formatDateTime } from '@/utils/format';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const profileStore = useProfileStore();
+const { profile, profileLoading, profileError } = storeToRefs(profileStore);
+const usernameFormRef = ref<FormInstance>();
 const passwordFormRef = ref<FormInstance>();
 
-const profile = ref<ProfileInfo | null>(null);
-const profileLoading = ref(false);
-const profileError = ref('');
 const roles = ref<string[]>([]);
 const rolesLoading = ref(false);
 const rolesError = ref('');
 const passwordSubmitting = ref(false);
+const usernameSubmitting = ref(false);
+
+const usernameForm = reactive({
+  newUsername: '',
+});
+
+const usernameRules: FormRules<typeof usernameForm> = {
+  newUsername: [
+    { required: true, message: '请输入新用户名', trigger: 'blur' },
+    {
+      pattern: /^[a-zA-Z][a-zA-Z0-9_]{3,19}$/,
+      message: '用户名需以字母开头，长度 4-20 位，只能包含字母、数字和下划线',
+      trigger: 'blur',
+    },
+  ],
+};
 
 const passwordForm = reactive({
   oldPassword: '',
@@ -83,22 +101,6 @@ function time(value?: string | number | Date | null): string {
   return formatDateTime(value);
 }
 
-async function loadProfile() {
-  profileLoading.value = true;
-  profileError.value = '';
-
-  try {
-    profile.value = await profileApi.info();
-  } catch (error) {
-    profile.value = null;
-    profileError.value =
-      error instanceof Error ? error.message || '个人资料加载失败' : '个人资料加载失败';
-    ElMessage.error(profileError.value);
-  } finally {
-    profileLoading.value = false;
-  }
-}
-
 async function loadRoles() {
   rolesLoading.value = true;
   rolesError.value = '';
@@ -116,7 +118,43 @@ async function loadRoles() {
 }
 
 async function retryProfile() {
-  await Promise.all([loadProfile(), loadRoles()]);
+  await Promise.allSettled([profileStore.fetchProfile(true), loadRoles()]);
+}
+
+async function submitUsername() {
+  if (usernameSubmitting.value) {
+    return;
+  }
+
+  const valid = await usernameFormRef.value?.validate().catch(() => false);
+
+  if (!valid) {
+    return;
+  }
+
+  const newUsername = usernameForm.newUsername.trim();
+
+  if (newUsername === profile.value?.username) {
+    ElMessage.info('用户名未变化');
+    return;
+  }
+
+  usernameSubmitting.value = true;
+
+  try {
+    await profileApi.changeUsername({
+      newUsername,
+    } satisfies ProfileChangeUsernamePayload);
+
+    ElMessage.success('用户名修改成功');
+    usernameForm.newUsername = '';
+    usernameFormRef.value?.clearValidate();
+    await profileStore.fetchProfile(true);
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '用户名修改失败');
+  } finally {
+    usernameSubmitting.value = false;
+  }
 }
 
 async function submitPassword() {
@@ -149,7 +187,7 @@ async function submitPassword() {
 }
 
 onMounted(() => {
-  void Promise.allSettled([loadProfile(), loadRoles()]);
+  void Promise.allSettled([profileStore.fetchProfile(true), loadRoles()]);
 });
 </script>
 
@@ -218,6 +256,37 @@ onMounted(() => {
           重新加载
         </button>
       </div>
+    </div>
+
+    <div class="panel username-panel">
+      <div class="username-head">
+        <h2>修改用户名</h2>
+        <p>修改成功后顶栏名称会同步更新。</p>
+      </div>
+
+      <el-form
+        ref="usernameFormRef"
+        class="username-form"
+        label-position="top"
+        :model="usernameForm"
+        :rules="usernameRules"
+        @submit.prevent="submitUsername"
+      >
+        <el-form-item label="新用户名" prop="newUsername">
+          <el-input
+            v-model="usernameForm.newUsername"
+            maxlength="20"
+            autocomplete="username"
+            placeholder="4-20 位，以字母开头"
+          />
+        </el-form-item>
+
+        <div class="username-actions">
+          <button type="submit" :disabled="usernameSubmitting">
+            {{ usernameSubmitting ? '正在提交' : '修改用户名' }}
+          </button>
+        </div>
+      </el-form>
     </div>
 
     <div v-loading="rolesLoading" class="panel roles-panel">
@@ -357,6 +426,53 @@ onMounted(() => {
   min-width: 0;
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+.username-head h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.username-head p {
+  margin: 5px 0 16px;
+  color: var(--ez-muted);
+  font-size: 13px;
+}
+
+.username-form {
+  max-width: 420px;
+}
+
+.username-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+}
+
+.username-actions button {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 16px;
+  border: 1px solid var(--ez-primary);
+  border-radius: 8px;
+  color: #fff;
+  background: var(--ez-primary);
+  font-weight: 650;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.username-actions button:hover:not(:disabled) {
+  border-color: var(--ez-primary-dark);
+  background: var(--ez-primary-dark);
+}
+
+.username-actions button:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
 }
 
 .profile-error,

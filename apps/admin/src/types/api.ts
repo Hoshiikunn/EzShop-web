@@ -109,6 +109,10 @@ export interface ProfileChangePasswordPayload {
   newPassword: string;
 }
 
+export interface ProfileChangeUsernamePayload {
+  newUsername: string;
+}
+
 export interface UserBatchDeletePayload {
   ids: UserId[];
 }
