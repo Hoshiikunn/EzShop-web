@@ -30,12 +30,13 @@ const router = createRouter({
           component: () => import('@/views/ProfileView.vue'),
           meta: { title: '个人中心' },
         },
+        {
+          path: ':pathMatch(.*)*',
+          name: 'not-found',
+          component: () => import('@/views/NotFoundView.vue'),
+          meta: { title: '页面不存在或无权访问' },
+        },
       ],
-    },
-    {
-      name: 'not-found',
-      path: '/:pathMatch(.*)*',
-      component: () => import('@/views/NotFoundView.vue'),
     },
   ],
 });

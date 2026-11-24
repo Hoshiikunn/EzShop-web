@@ -1,7 +1,7 @@
 <template>
   <section class="not-found">
-    <h2>页面不存在</h2>
-    <p>请检查菜单配置的路由地址和组件路径。</p>
+    <h2>页面不存在或无权访问</h2>
+    <p>请确认页面地址，或返回有权限的后台页面。</p>
   </section>
 </template>
 
