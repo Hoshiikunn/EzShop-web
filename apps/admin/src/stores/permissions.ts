@@ -3,6 +3,7 @@ import { profileApi } from '@/api/profile';
 
 let permissionsRequest: Promise<void> | null = null;
 let permissionsRequestId = 0;
+let permissionsEnsurePromise: Promise<void> | null = null;
 
 function resolvePermissionsError(error: unknown): string {
   return error instanceof Error && error.message ? error.message : '权限标识加载失败';
@@ -13,6 +14,7 @@ export const usePermissionStore = defineStore('permissions', {
     permissions: new Set<string>(),
     permissionsLoading: false,
     permissionsError: '',
+    permissionsInitialized: false,
   }),
   getters: {
     hasPermission: (state) => (permission: string) =>
@@ -52,15 +54,36 @@ export const usePermissionStore = defineStore('permissions', {
         if (permissionsRequestId === requestId) {
           this.permissionsLoading = false;
           permissionsRequest = null;
+          this.permissionsInitialized = true;
         }
+      }
+    },
+    async ensurePermissions(force = false) {
+      if (!force && permissionsEnsurePromise) {
+        return permissionsEnsurePromise;
+      }
+
+      const request = this.fetchPermissions(force);
+      permissionsEnsurePromise = request;
+
+      try {
+        await request;
+      } catch (error) {
+        if (permissionsEnsurePromise === request) {
+          permissionsEnsurePromise = null;
+        }
+
+        throw error;
       }
     },
     reset() {
       permissionsRequestId += 1;
       permissionsRequest = null;
+      permissionsEnsurePromise = null;
       this.permissions.clear();
       this.permissionsLoading = false;
       this.permissionsError = '';
+      this.permissionsInitialized = false;
     },
   },
 });
