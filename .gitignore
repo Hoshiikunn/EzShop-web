@@ -65,3 +65,8 @@ desktop.ini
 
 # ================= 其他 =================
 *.bak
+
+# ================= 本地文档 =================
+# Issue 模板仅本地使用，不入库
+ISSUE_TEMPLATES.md
+ISSUE_TEMPLATES.local.md
