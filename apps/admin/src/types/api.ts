@@ -243,3 +243,31 @@ export type MenuCreatePayload =
 export type MenuUpdatePayload = MenuCreatePayload & {
   id: MenuId;
 };
+
+export type LoginLogId = string;
+
+export type LoginLogStatus = 0 | 1;
+
+export interface LoginLogPageQuery {
+  current?: number;
+  size?: number;
+  username?: string;
+  userId?: UserId;
+  ip?: string;
+  status?: LoginLogStatus;
+  createTimeBegin?: string;
+  createTimeEnd?: string;
+}
+
+export interface LoginLogPageItem {
+  id: LoginLogId;
+  username: string;
+  userId: UserId;
+  ip?: string;
+  loginLocation?: string;
+  os?: string;
+  browser?: string;
+  status: LoginLogStatus;
+  message?: string;
+  createTime?: string;
+}
