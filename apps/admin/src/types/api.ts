@@ -252,7 +252,6 @@ export interface LoginLogPageQuery {
   current?: number;
   size?: number;
   username?: string;
-  userId?: UserId;
   ip?: string;
   status?: LoginLogStatus;
   createTimeBegin?: string;
@@ -262,12 +261,43 @@ export interface LoginLogPageQuery {
 export interface LoginLogPageItem {
   id: LoginLogId;
   username: string;
-  userId: UserId;
   ip?: string;
   loginLocation?: string;
   os?: string;
   browser?: string;
   status: LoginLogStatus;
   message?: string;
+  createTime?: string;
+}
+
+export type OperLogId = string;
+
+export type OperLogStatus = 0 | 1;
+
+export interface OperLogPageQuery {
+  current?: number;
+  size?: number;
+  module?: string;
+  operation?: string;
+  username?: string;
+  ip?: string;
+  status?: OperLogStatus;
+  createTimeBegin?: string;
+  createTimeEnd?: string;
+}
+
+export interface OperLogPageItem {
+  id: OperLogId;
+  module?: string;
+  operation?: string;
+  username?: string;
+  requestMethod?: string;
+  requestUri?: string;
+  ip?: string;
+  operLocation?: string;
+  requestParams?: string;
+  status: OperLogStatus;
+  errorMsg?: string;
+  elapsedMs?: number;
   createTime?: string;
 }
