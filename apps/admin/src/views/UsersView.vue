@@ -554,9 +554,15 @@ onMounted(loadUsers);
       >
         <el-table-column v-if="canDeleteUser" type="selection" min-width="44" />
         <el-table-column prop="id" label="ID" min-width="170" />
-        <el-table-column prop="username" label="用户名" min-width="130" show-overflow-tooltip />
-        <el-table-column prop="realName" label="真实姓名" min-width="120" show-overflow-tooltip />
-        <el-table-column label="性别" min-width="70">
+        <el-table-column prop="username" label="用户名" min-width="130" show-overflow-tooltip sortable />
+        <el-table-column
+          prop="realName"
+          label="真实姓名"
+          min-width="120"
+          show-overflow-tooltip
+          sortable
+        />
+        <el-table-column prop="gender" label="性别" min-width="70" sortable>
           <template #default="{ row }">
             {{ row.gender === 1 ? '男' : '女' }}
           </template>
