@@ -308,7 +308,7 @@ async function confirmDeleteUsers(users: UserPageItem[]) {
   deleting.value = true;
 
   try {
-    await sysUserApi.batchDelete({ ids });
+    await sysUserApi.batchDelete(ids);
     ElMessage.success(ids.length === 1 ? '用户已删除' : `已删除 ${ids.length} 个用户`);
 
     const deletedIds = new Set(ids);
