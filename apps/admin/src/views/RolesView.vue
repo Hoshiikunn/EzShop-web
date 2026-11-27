@@ -426,7 +426,7 @@ async function handleRoleUpdated(roleId: RoleId) {
         @row-click="openDetail"
       >
         <el-table-column prop="id" label="ID" min-width="170" />
-        <el-table-column prop="roleName" label="角色名称" min-width="140" show-overflow-tooltip />
+        <el-table-column prop="roleName" label="角色名称" min-width="140" show-overflow-tooltip sortable />
         <el-table-column
           prop="roleKey"
           label="角色权限字符"
