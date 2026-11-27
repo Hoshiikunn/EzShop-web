@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Braces, Copy, Eye, RefreshCw, Search } from 'lucide-vue-next';
+import { Braces, CircleAlert, Copy, Eye, Globe, Info, RefreshCw, Search, User } from 'lucide-vue-next';
 import { sysLogApi } from '@/api/sys-log';
 import type {
   OperLogPageItem,
@@ -341,64 +341,100 @@ onMounted(() => {
 
     <el-drawer v-model="detailVisible" title="操作日志详情" size="480px">
       <div v-if="detailLog" class="detail-body">
-        <dl class="detail-list">
-          <div>
-            <dt>日志 ID</dt>
-            <dd>{{ detailLog.id }}</dd>
+        <div class="detail-section">
+          <div class="section-header">
+            <span class="section-title">
+              <Info :size="14" />
+              基本信息
+            </span>
           </div>
-          <div>
-            <dt>所属模块</dt>
-            <dd>{{ detailLog.module || '-' }}</dd>
-          </div>
-          <div>
-            <dt>操作内容</dt>
-            <dd>{{ detailLog.operation || '-' }}</dd>
-          </div>
-          <div>
-            <dt>操作人员</dt>
-            <dd>{{ detailLog.username || '-' }}</dd>
-          </div>
-          <div>
-            <dt>请求方式</dt>
-            <dd>{{ detailLog.requestMethod || '-' }}</dd>
-          </div>
-          <div>
-            <dt>请求地址</dt>
-            <dd class="break-all">{{ detailLog.requestUri || '-' }}</dd>
-          </div>
-          <div>
-            <dt>操作 IP</dt>
-            <dd>{{ detailLog.ip || '-' }}</dd>
-          </div>
-          <div>
-            <dt>操作地点</dt>
-            <dd>{{ detailLog.operLocation || '-' }}</dd>
-          </div>
-          <div>
-            <dt>状态</dt>
-            <dd>
-              <el-tag :type="detailLog.status === 1 ? 'success' : 'danger'" effect="light">
-                {{ detailLog.status === 1 ? '成功' : '失败' }}
-              </el-tag>
-            </dd>
-          </div>
-          <div v-if="detailLog.status !== 1">
-            <dt>失败原因</dt>
-            <dd class="break-all">{{ detailLog.errorMsg || '-' }}</dd>
-          </div>
-          <div>
-            <dt>耗时</dt>
-            <dd>{{ formatElapsed(detailLog.elapsedMs) }}</dd>
-          </div>
-          <div>
-            <dt>操作时间</dt>
-            <dd>{{ formatDateTime(detailLog.createTime) }}</dd>
-          </div>
-        </dl>
+          <dl class="detail-list">
+            <div>
+              <dt>日志 ID</dt>
+              <dd>{{ detailLog.id }}</dd>
+            </div>
+            <div>
+              <dt>所属模块</dt>
+              <dd>{{ detailLog.module || '-' }}</dd>
+            </div>
+            <div>
+              <dt>操作内容</dt>
+              <dd>{{ detailLog.operation || '-' }}</dd>
+            </div>
+            <div>
+              <dt>状态</dt>
+              <dd>
+                <el-tag :type="detailLog.status === 1 ? 'success' : 'danger'" effect="light">
+                  {{ detailLog.status === 1 ? '成功' : '失败' }}
+                </el-tag>
+              </dd>
+            </div>
+            <div>
+              <dt>耗时</dt>
+              <dd>{{ formatElapsed(detailLog.elapsedMs) }}</dd>
+            </div>
+            <div>
+              <dt>操作时间</dt>
+              <dd>{{ formatDateTime(detailLog.createTime) }}</dd>
+            </div>
+          </dl>
+        </div>
 
-        <div class="params-section">
-          <div class="params-header">
-            <span class="params-title">
+        <div class="detail-section">
+          <div class="section-header">
+            <span class="section-title">
+              <User :size="14" />
+              操作人员
+            </span>
+          </div>
+          <dl class="detail-list">
+            <div>
+              <dt>操作人员</dt>
+              <dd>{{ detailLog.username || '-' }}</dd>
+            </div>
+            <div>
+              <dt>操作 IP</dt>
+              <dd>{{ detailLog.ip || '-' }}</dd>
+            </div>
+            <div>
+              <dt>操作地点</dt>
+              <dd>{{ detailLog.operLocation || '-' }}</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div class="detail-section">
+          <div class="section-header">
+            <span class="section-title">
+              <Globe :size="14" />
+              请求信息
+            </span>
+          </div>
+          <dl class="detail-list">
+            <div>
+              <dt>请求方式</dt>
+              <dd>{{ detailLog.requestMethod || '-' }}</dd>
+            </div>
+            <div>
+              <dt>请求地址</dt>
+              <dd class="break-all">{{ detailLog.requestUri || '-' }}</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div v-if="detailLog.status !== 1" class="detail-section">
+          <div class="section-header">
+            <span class="section-title">
+              <CircleAlert :size="14" />
+              失败原因
+            </span>
+          </div>
+          <p class="failure-text">{{ detailLog.errorMsg || '-' }}</p>
+        </div>
+
+        <div class="detail-section params-section">
+          <div class="section-header">
+            <span class="section-title">
               <Braces :size="14" />
               请求参数
             </span>
@@ -524,20 +560,19 @@ onMounted(() => {
 
 .detail-body {
   display: grid;
-  gap: 18px;
+  gap: 14px;
 }
 
 .detail-list {
-  display: grid;
-  gap: 0;
   margin: 0;
+  padding: 2px 12px;
 }
 
 .detail-list div {
   display: grid;
   grid-template-columns: 90px minmax(0, 1fr);
   gap: 12px;
-  padding: 12px 0;
+  padding: 10px 0;
   border-bottom: 1px solid var(--ez-line);
 }
 
@@ -554,17 +589,13 @@ onMounted(() => {
   min-width: 0;
 }
 
-.break-all {
-  overflow-wrap: anywhere;
-}
-
-.params-section {
+.detail-section {
   border: 1px solid var(--ez-line);
   border-radius: 8px;
   overflow: hidden;
 }
 
-.params-header {
+.section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -574,12 +605,16 @@ onMounted(() => {
   background: #fbfcff;
 }
 
-.params-title {
+.section-title {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 14px;
   font-weight: 600;
+}
+
+.break-all {
+  overflow-wrap: anywhere;
 }
 
 .copy-button {
@@ -608,6 +643,17 @@ onMounted(() => {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   background: #f7f9ff;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.failure-text {
+  margin: 0;
+  padding: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: #d2494a;
+  background: #fff5f5;
   font-size: 13px;
   line-height: 1.6;
 }
