@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
-import { ElMessage, type TableInstance } from 'element-plus';
+import { ElMessage } from 'element-plus';
 import { Braces, CircleAlert, Copy, Eye, Globe, Info, RefreshCw, Search, User } from 'lucide-vue-next';
 import { sysLogApi } from '@/api/sys-log';
 import type {
@@ -10,31 +10,11 @@ import type {
 } from '@/types/api';
 import { formatDateTime } from '@/utils/format';
 import { usePermissionStore } from '@/stores/permissions';
-import { useTableColumns } from '@/composables/use-table-columns';
 
 const logs = ref<OperLogPageItem[]>([]);
 const total = ref(0);
 const tableLoading = ref(false);
-const tableRef = ref<TableInstance>();
 const permissionStore = usePermissionStore();
-
-const { columnWidths, handleHeaderDragend } = useTableColumns(
-  [
-    { label: '日志 ID', width: 200, minWidth: 150 },
-    { label: '所属模块', width: 110, minWidth: 80 },
-    { label: '操作内容', width: 120, minWidth: 80 },
-    { label: '操作人员', width: 120, minWidth: 80 },
-    { label: '请求方式', width: 90, minWidth: 70 },
-    { label: '请求地址', width: 200, minWidth: 120 },
-    { label: '操作 IP', width: 140, minWidth: 90 },
-    { label: '操作地点', width: 160, minWidth: 90 },
-    { label: '状态', width: 90, minWidth: 70 },
-    { label: '耗时', width: 100, minWidth: 70 },
-    { label: '操作时间', width: 180, minWidth: 140 },
-    { label: '操作', width: 110, minWidth: 80 },
-  ],
-  tableRef,
-);
 
 const canQueryOperLogs = computed(() =>
   permissionStore.hasPermission('sys:log:oper:query'),
@@ -307,77 +287,50 @@ onMounted(() => {
       </div>
 
       <el-table
-        ref="tableRef"
         v-loading="tableLoading"
         :data="logs"
         row-key="id"
         class="oper-log-table"
-        border
-        @header-dragend="handleHeaderDragend"
       >
-        <el-table-column prop="id" label="日志 ID" :width="columnWidths['日志 ID']" show-overflow-tooltip />
-        <el-table-column
-          prop="module"
-          label="所属模块"
-          :width="columnWidths['所属模块']"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="operation"
-          label="操作内容"
-          :width="columnWidths['操作内容']"
-          show-overflow-tooltip
-        />
+        <el-table-column prop="id" label="日志 ID" min-width="190" show-overflow-tooltip />
+        <el-table-column prop="module" label="所属模块" min-width="110" show-overflow-tooltip />
+        <el-table-column prop="operation" label="操作内容" min-width="130" show-overflow-tooltip />
         <el-table-column
           prop="username"
           label="操作人员"
-          :width="columnWidths['操作人员']"
+          min-width="110"
           show-overflow-tooltip
           sortable
         />
-        <el-table-column
-          prop="requestMethod"
-          label="请求方式"
-          :width="columnWidths['请求方式']"
-        />
-        <el-table-column
-          prop="requestUri"
-          label="请求地址"
-          :width="columnWidths['请求地址']"
-          show-overflow-tooltip
-        />
-        <el-table-column prop="ip" label="操作 IP" :width="columnWidths['操作 IP']" show-overflow-tooltip />
+        <el-table-column prop="requestMethod" label="请求方式" min-width="90" />
+        <el-table-column prop="requestUri" label="请求地址" min-width="240" show-overflow-tooltip />
+        <el-table-column prop="ip" label="操作 IP" min-width="130" show-overflow-tooltip />
         <el-table-column
           prop="operLocation"
           label="操作地点"
-          :width="columnWidths['操作地点']"
+          min-width="120"
           show-overflow-tooltip
         />
-        <el-table-column label="状态" :width="columnWidths['状态']">
+        <el-table-column label="状态" min-width="80">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'danger'" effect="light">
               {{ row.status === 1 ? '成功' : '失败' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="elapsedMs" label="耗时" :width="columnWidths['耗时']" sortable>
+        <el-table-column prop="elapsedMs" label="耗时" min-width="90" sortable>
           <template #default="{ row }">
             {{ formatElapsed(row.elapsedMs) }}
           </template>
         </el-table-column>
-        <el-table-column
-          prop="createTime"
-          label="操作时间"
-          :width="columnWidths['操作时间']"
-          sortable
-        >
+        <el-table-column prop="createTime" label="操作时间" min-width="170" sortable>
           <template #default="{ row }">
             {{ formatDateTime(row.createTime) }}
           </template>
         </el-table-column>
         <el-table-column
           label="操作"
-          :width="columnWidths['操作']"
+          min-width="110"
           align="center"
           header-align="center"
           fixed="right"
