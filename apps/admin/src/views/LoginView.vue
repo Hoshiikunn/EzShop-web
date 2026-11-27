@@ -164,23 +164,6 @@ onBeforeUnmount(stopTyping);
   background-size: 180% 100%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: title-gradient 9s ease-in-out infinite alternate;
-}
-
-@keyframes title-gradient {
-  0% {
-    background-position: 0% 50%;
-  }
-  100% {
-    background-position: 100% 50%;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .login-title {
-    animation: none;
-    background-position: 0% 50%;
-  }
 }
 
 .login-subtitle {
@@ -195,9 +178,8 @@ onBeforeUnmount(stopTyping);
   padding: clamp(20px, 3vw, 30px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
-  background: rgba(15, 20, 38, 0.72);
+  background: rgba(15, 20, 38, 0.86);
   box-shadow: 0 24px 80px rgba(2, 6, 20, 0.42);
-  backdrop-filter: blur(18px);
 }
 
 .field {
