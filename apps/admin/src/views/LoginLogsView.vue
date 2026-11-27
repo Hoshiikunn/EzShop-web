@@ -20,9 +20,6 @@ const canQueryLoginLogs = computed(() =>
   permissionStore.hasPermission('sys:log:login:query'),
 );
 
-const userIdPattern = /^[1-9]\d*$/;
-const maxUserId = '9223372036854775807';
-
 const pagination = reactive({
   current: 1,
   size: 10,
@@ -30,7 +27,6 @@ const pagination = reactive({
 
 const filters = reactive({
   username: '',
-  userId: '',
   ip: '',
   status: undefined as LoginLogStatus | undefined,
   createTimeRange: null as [string, string] | null,
@@ -52,30 +48,6 @@ function normalizeDateRange(value: [string, string] | null): [string, string] | 
   return begin && end ? [begin, end] : undefined;
 }
 
-function isValidUserId(value: string): boolean {
-  if (!userIdPattern.test(value)) {
-    return false;
-  }
-
-  if (value.length < maxUserId.length) {
-    return true;
-  }
-
-  return value.length === maxUserId.length && value <= maxUserId;
-}
-
-function validateUserIdFilter(): boolean {
-  const userId = filters.userId.trim();
-
-  if (!userId || isValidUserId(userId)) {
-    return true;
-  }
-
-  ElMessage.warning('用户 ID 必须为正整数');
-
-  return false;
-}
-
 function buildParams(): LoginLogPageQuery {
   const params: LoginLogPageQuery = {
     current: pagination.current,
@@ -84,12 +56,6 @@ function buildParams(): LoginLogPageQuery {
 
   if (filters.username.trim()) {
     params.username = filters.username.trim();
-  }
-
-  const userId = filters.userId.trim();
-
-  if (userId) {
-    params.userId = userId;
   }
 
   if (filters.ip.trim()) {
@@ -116,10 +82,6 @@ async function loadLogs() {
     return;
   }
 
-  if (!validateUserIdFilter()) {
-    return;
-  }
-
   tableLoading.value = true;
 
   try {
@@ -140,7 +102,6 @@ async function searchLogs() {
 
 async function resetFilters() {
   filters.username = '';
-  filters.userId = '';
   filters.ip = '';
   filters.status = undefined;
   filters.createTimeRange = null;
@@ -174,17 +135,6 @@ onMounted(() => {
             placeholder="模糊搜索"
             clearable
             maxlength="64"
-            class="filter-input"
-          />
-        </el-form-item>
-
-        <el-form-item label="用户 ID">
-          <el-input
-            v-model="filters.userId"
-            placeholder="精确匹配"
-            clearable
-            maxlength="19"
-            inputmode="numeric"
             class="filter-input"
           />
         </el-form-item>
@@ -238,7 +188,6 @@ onMounted(() => {
       <el-table v-loading="tableLoading" :data="logs" row-key="id" class="login-log-table">
         <el-table-column prop="id" label="日志 ID" min-width="180" show-overflow-tooltip />
         <el-table-column prop="username" label="用户名" min-width="140" show-overflow-tooltip />
-        <el-table-column prop="userId" label="用户 ID" min-width="180" show-overflow-tooltip />
         <el-table-column prop="ip" label="登录 IP" min-width="140" show-overflow-tooltip />
         <el-table-column prop="loginLocation" label="登录地点" min-width="160" show-overflow-tooltip />
         <el-table-column prop="os" label="操作系统" min-width="120" show-overflow-tooltip />

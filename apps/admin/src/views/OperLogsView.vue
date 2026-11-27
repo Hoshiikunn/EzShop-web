@@ -23,9 +23,6 @@ const canQueryOperLogs = computed(() =>
 const detailVisible = ref(false);
 const detailLog = ref<OperLogPageItem | null>(null);
 
-const userIdPattern = /^[1-9]\d*$/;
-const maxUserId = '9223372036854775807';
-
 const pagination = reactive({
   current: 1,
   size: 10,
@@ -35,7 +32,6 @@ const filters = reactive({
   module: '',
   operation: '',
   username: '',
-  userId: '',
   ip: '',
   status: undefined as OperLogStatus | undefined,
   createTimeRange: null as [string, string] | null,
@@ -57,30 +53,6 @@ function normalizeDateRange(value: [string, string] | null): [string, string] | 
   return begin && end ? [begin, end] : undefined;
 }
 
-function isValidUserId(value: string): boolean {
-  if (!userIdPattern.test(value)) {
-    return false;
-  }
-
-  if (value.length < maxUserId.length) {
-    return true;
-  }
-
-  return value.length === maxUserId.length && value <= maxUserId;
-}
-
-function validateUserIdFilter(): boolean {
-  const userId = filters.userId.trim();
-
-  if (!userId || isValidUserId(userId)) {
-    return true;
-  }
-
-  ElMessage.warning('用户 ID 必须为正整数');
-
-  return false;
-}
-
 function buildParams(): OperLogPageQuery {
   const params: OperLogPageQuery = {
     current: pagination.current,
@@ -97,12 +69,6 @@ function buildParams(): OperLogPageQuery {
 
   if (filters.username.trim()) {
     params.username = filters.username.trim();
-  }
-
-  const userId = filters.userId.trim();
-
-  if (userId) {
-    params.userId = userId;
   }
 
   if (filters.ip.trim()) {
@@ -129,10 +95,6 @@ async function loadLogs() {
     return;
   }
 
-  if (!validateUserIdFilter()) {
-    return;
-  }
-
   tableLoading.value = true;
 
   try {
@@ -155,7 +117,6 @@ async function resetFilters() {
   filters.module = '';
   filters.operation = '';
   filters.username = '';
-  filters.userId = '';
   filters.ip = '';
   filters.status = undefined;
   filters.createTimeRange = null;
@@ -279,17 +240,6 @@ onMounted(() => {
           />
         </el-form-item>
 
-        <el-form-item label="用户 ID">
-          <el-input
-            v-model="filters.userId"
-            placeholder="精确匹配"
-            clearable
-            maxlength="19"
-            inputmode="numeric"
-            class="filter-input"
-          />
-        </el-form-item>
-
         <el-form-item label="操作 IP">
           <el-input
             v-model="filters.ip"
@@ -340,8 +290,7 @@ onMounted(() => {
         <el-table-column prop="id" label="日志 ID" min-width="180" show-overflow-tooltip />
         <el-table-column prop="module" label="所属模块" min-width="110" show-overflow-tooltip />
         <el-table-column prop="operation" label="操作内容" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="username" label="用户名" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="userId" label="用户 ID" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="username" label="操作人员" min-width="120" show-overflow-tooltip />
         <el-table-column prop="requestMethod" label="请求方式" width="90" />
         <el-table-column prop="requestUri" label="请求地址" min-width="200" show-overflow-tooltip />
         <el-table-column prop="ip" label="操作 IP" min-width="140" show-overflow-tooltip />
@@ -406,12 +355,8 @@ onMounted(() => {
             <dd>{{ detailLog.operation || '-' }}</dd>
           </div>
           <div>
-            <dt>用户名</dt>
+            <dt>操作人员</dt>
             <dd>{{ detailLog.username || '-' }}</dd>
-          </div>
-          <div>
-            <dt>用户 ID</dt>
-            <dd>{{ detailLog.userId }}</dd>
           </div>
           <div>
             <dt>请求方式</dt>

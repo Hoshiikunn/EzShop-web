@@ -252,7 +252,6 @@ export interface LoginLogPageQuery {
   current?: number;
   size?: number;
   username?: string;
-  userId?: UserId;
   ip?: string;
   status?: LoginLogStatus;
   createTimeBegin?: string;
@@ -262,7 +261,6 @@ export interface LoginLogPageQuery {
 export interface LoginLogPageItem {
   id: LoginLogId;
   username: string;
-  userId: UserId;
   ip?: string;
   loginLocation?: string;
   os?: string;
@@ -282,7 +280,6 @@ export interface OperLogPageQuery {
   module?: string;
   operation?: string;
   username?: string;
-  userId?: UserId;
   ip?: string;
   status?: OperLogStatus;
   createTimeBegin?: string;
@@ -293,7 +290,6 @@ export interface OperLogPageItem {
   id: OperLogId;
   module?: string;
   operation?: string;
-  userId: UserId;
   username?: string;
   requestMethod?: string;
   requestUri?: string;
