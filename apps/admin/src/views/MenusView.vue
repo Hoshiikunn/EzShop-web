@@ -13,6 +13,7 @@ import { usePermissionStore } from '@/stores/permissions';
 
 const menus = ref<MenuItem[]>([]);
 const tableLoading = ref(false);
+const expandedKeys = ref<MenuId[]>([]);
 const drawerVisible = ref(false);
 const detailLoading = ref(false);
 const detail = ref<MenuInfo | null>(null);
@@ -38,6 +39,10 @@ interface MenuTreeItem extends MenuItem {
 }
 
 const menuTree = computed(() => buildMenuTree(menus.value));
+
+function handleExpandChange(row: MenuTreeItem, expandedRows: MenuTreeItem[]) {
+  expandedKeys.value = expandedRows.map((item) => item.id);
+}
 
 const menuNameById = computed(() => {
   const nameById = new Map<string, string>();
@@ -233,8 +238,9 @@ onMounted(() => {
         :data="menuTree"
         row-key="id"
         class="menu-table"
-        default-expand-all
+        :expand-row-keys="expandedKeys"
         :tree-props="{ children: 'children' }"
+        @expand-change="handleExpandChange"
         @row-click="openDetail"
       >
         <template #empty>
