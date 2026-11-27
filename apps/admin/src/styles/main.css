@@ -41,3 +41,9 @@ select,
 textarea {
   font: inherit;
 }
+
+/* 管理后台列表：标题与内容统一居中（issue #97） */
+.el-table th.el-table__cell > .cell,
+.el-table td.el-table__cell > .cell {
+  text-align: center;
+}

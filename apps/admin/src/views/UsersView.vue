@@ -16,6 +16,7 @@ import CreateUserDrawer from '@/components/CreateUserDrawer.vue';
 import EditUserDrawer from '@/components/EditUserDrawer.vue';
 import UserAvatar from '@/components/UserAvatar.vue';
 import { usePermissionStore } from '@/stores/permissions';
+import { useTableColumns } from '@/composables/use-table-columns';
 
 const users = ref<UserPageItem[]>([]);
 const total = ref(0);
@@ -24,6 +25,21 @@ const detailLoading = ref(false);
 const drawerVisible = ref(false);
 const detail = ref<UserInfo | null>(null);
 const userTableRef = ref<TableInstance>();
+
+const { columnWidths, handleHeaderDragend } = useTableColumns(
+  [
+    { label: '选择', width: 44, minWidth: 44 },
+    { label: 'ID', width: 110, minWidth: 80 },
+    { label: '用户名', width: 140, minWidth: 80 },
+    { label: '真实姓名', width: 130, minWidth: 80 },
+    { label: '性别', width: 80, minWidth: 60 },
+    { label: '手机号', width: 130, minWidth: 90 },
+    { label: '状态', width: 100, minWidth: 70 },
+    { label: '创建时间', width: 180, minWidth: 140 },
+    { label: '操作', width: 180, minWidth: 120 },
+  ],
+  userTableRef,
+);
 const selectedUsers = ref<UserPageItem[]>([]);
 const createUserVisible = ref(false);
 const editUserVisible = ref(false);
@@ -549,27 +565,54 @@ onMounted(loadUsers);
         :data="users"
         row-key="id"
         class="user-table"
+        border
         @selection-change="handleSelectionChange"
+        @header-dragend="handleHeaderDragend"
         @row-click="openDetail"
       >
-        <el-table-column v-if="canDeleteUser" type="selection" width="44" />
-        <el-table-column prop="id" label="ID" min-width="90" />
-        <el-table-column prop="username" label="用户名" min-width="140" show-overflow-tooltip />
-        <el-table-column prop="realName" label="真实姓名" min-width="130" show-overflow-tooltip />
-        <el-table-column label="性别" width="80">
+        <el-table-column
+          v-if="canDeleteUser"
+          type="selection"
+          label="选择"
+          :width="columnWidths['选择']"
+        />
+        <el-table-column prop="id" label="ID" :width="columnWidths['ID']" />
+        <el-table-column
+          prop="username"
+          label="用户名"
+          :width="columnWidths['用户名']"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="realName"
+          label="真实姓名"
+          :width="columnWidths['真实姓名']"
+          show-overflow-tooltip
+        />
+        <el-table-column label="性别" :width="columnWidths['性别']">
           <template #default="{ row }">
             {{ row.gender === 1 ? '男' : '女' }}
           </template>
         </el-table-column>
-        <el-table-column prop="mobile" label="手机号" min-width="130" show-overflow-tooltip />
-        <el-table-column label="状态" width="100">
+        <el-table-column
+          prop="mobile"
+          label="手机号"
+          :width="columnWidths['手机号']"
+          show-overflow-tooltip
+        />
+        <el-table-column prop="status" label="状态" :width="columnWidths['状态']" sortable>
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'danger'" effect="light">
               {{ row.status === 1 ? '启用' : '禁用' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="创建时间" min-width="180">
+        <el-table-column
+          prop="createTime"
+          label="创建时间"
+          :width="columnWidths['创建时间']"
+          sortable
+        >
           <template #default="{ row }">
             {{ formatDateTime(row.createTime) }}
           </template>
@@ -577,7 +620,7 @@ onMounted(loadUsers);
         <el-table-column
           v-if="canShowUserActions"
           label="操作"
-          width="180"
+          :width="columnWidths['操作']"
           align="center"
           header-align="center"
           fixed="right"
