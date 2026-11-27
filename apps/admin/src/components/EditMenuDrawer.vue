@@ -425,7 +425,6 @@ watch(
             :props="{ label: 'menuName', children: 'children', disabled: 'disabled' }"
             node-key="id"
             check-strictly
-            default-expand-all
             :loading="menuListLoading"
           />
         </el-form-item>
