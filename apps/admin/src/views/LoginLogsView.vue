@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
-import { ElMessage } from 'element-plus';
-import { RefreshCw, Search } from 'lucide-vue-next';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { RefreshCw, Search, Trash2 } from 'lucide-vue-next';
 import { sysLogApi } from '@/api/sys-log';
 import type {
   LoginLogPageItem,
@@ -14,10 +14,21 @@ import { usePermissionStore } from '@/stores/permissions';
 const logs = ref<LoginLogPageItem[]>([]);
 const total = ref(0);
 const tableLoading = ref(false);
+const selectedLogs = ref<LoginLogPageItem[]>([]);
+const deleting = ref(false);
 const permissionStore = usePermissionStore();
 
 const canQueryLoginLogs = computed(() =>
   permissionStore.hasPermission('sys:log:login:query'),
+);
+const canDeleteLoginLogs = computed(() =>
+  permissionStore.hasPermission('sys:log:login:delete'),
+);
+
+const selectedCount = computed(() => selectedLogs.value.length);
+
+const batchDeleteDisabled = computed(
+  () => deleting.value || selectedCount.value === 0,
 );
 
 const pagination = reactive({
@@ -120,6 +131,49 @@ function handleCurrentChange(current: number) {
   void loadLogs();
 }
 
+function handleSelectionChange(rows: LoginLogPageItem[]) {
+  selectedLogs.value = rows;
+}
+
+function buildDeleteConfirmMessage(): string {
+  const count = selectedCount.value;
+
+  return count === 1
+    ? '确定要删除选中的 1 条登录日志吗？删除后不可恢复。'
+    : `确定要删除选中的 ${count} 条登录日志吗？删除后不可恢复。`;
+}
+
+async function confirmDeleteSelectedLogs() {
+  if (!canDeleteLoginLogs.value || selectedCount.value === 0) {
+    return;
+  }
+
+  try {
+    await ElMessageBox.confirm(buildDeleteConfirmMessage(), '删除登录日志', {
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+    });
+  } catch {
+    return;
+  }
+
+  deleting.value = true;
+
+  try {
+    await sysLogApi.batchDeleteLoginLog(selectedLogs.value.map((log) => log.id));
+    ElMessage.success(
+      selectedCount.value === 1 ? '登录日志已删除' : `已删除 ${selectedCount.value} 条登录日志`,
+    );
+    selectedLogs.value = [];
+    await loadLogs();
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '登录日志删除失败');
+  } finally {
+    deleting.value = false;
+  }
+}
+
 onMounted(() => {
   void loadLogs();
 });
@@ -183,6 +237,17 @@ onMounted(() => {
     <div class="panel table-panel">
       <div class="table-header">
         <h2>登录日志列表</h2>
+        <div v-if="canDeleteLoginLogs" class="header-actions">
+          <button
+            class="danger-button"
+            type="button"
+            :disabled="batchDeleteDisabled"
+            @click="confirmDeleteSelectedLogs"
+          >
+            <Trash2 :size="16" />
+            删除所选{{ selectedCount ? `（${selectedCount}）` : '' }}
+          </button>
+        </div>
       </div>
 
       <el-table
@@ -190,7 +255,9 @@ onMounted(() => {
         :data="logs"
         row-key="id"
         class="login-log-table"
+        @selection-change="handleSelectionChange"
       >
+        <el-table-column v-if="canDeleteLoginLogs" type="selection" width="44" />
         <el-table-column prop="id" label="日志 ID" min-width="190" show-overflow-tooltip />
         <el-table-column
           prop="username"
@@ -319,6 +386,40 @@ onMounted(() => {
 .table-header h2 {
   margin: 0;
   font-size: 18px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.danger-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 13px;
+  border: 1px solid rgba(210, 73, 74, 0.36);
+  border-radius: 7px;
+  color: #d2494a;
+  background: #fff;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.danger-button:hover:not(:disabled) {
+  color: #fff;
+  border-color: #d2494a;
+  background: #d2494a;
+}
+
+.danger-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .pagination-row {
