@@ -6,6 +6,7 @@ import { sysUserApi } from '@/api/sys-user';
 import { sysRoleApi } from '@/api/sys-role';
 import AvatarFileInput from '@/components/AvatarFileInput.vue';
 import type { Gender, RoleId, RoleListItem, UserCreatePayload, UserInitInfo } from '@/types/api';
+import { usePermissionStore } from '@/stores/permissions';
 
 const visible = defineModel<boolean>({
   required: true,
@@ -21,6 +22,11 @@ const createdUser = ref<UserInitInfo | null>(null);
 const avatarFile = ref<File | null>(null);
 const roleOptions = ref<RoleListItem[]>([]);
 const roleLoading = ref(false);
+const permissionStore = usePermissionStore();
+
+const canManageRoleOptions = computed(() =>
+  permissionStore.hasPermission('sys:role:list'),
+);
 
 const enabledRoles = computed(() => roleOptions.value.filter((role) => role.status === 1));
 
@@ -141,6 +147,12 @@ async function submitForm() {
 }
 
 async function loadRoleOptions() {
+  if (!canManageRoleOptions.value) {
+    roleOptions.value = [];
+
+    return;
+  }
+
   roleLoading.value = true;
 
   try {
@@ -257,6 +269,7 @@ watch(visible, (value) => {
               :label="role.roleName"
             />
           </el-select>
+          <p v-if="!canManageRoleOptions" class="role-note">无权限，无法分配角色</p>
         </el-form-item>
 
         <div class="form-actions">
@@ -279,6 +292,12 @@ watch(visible, (value) => {
 
 .role-select {
   width: 100%;
+}
+
+.role-note {
+  margin: 8px 0 0;
+  color: #d2494a;
+  font-size: 12px;
 }
 
 .ghost-button,
