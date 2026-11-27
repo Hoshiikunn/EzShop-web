@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
-import { ElMessage } from 'element-plus';
+import { ElMessage, type TableInstance } from 'element-plus';
 import { RefreshCw, Search } from 'lucide-vue-next';
 import { sysLogApi } from '@/api/sys-log';
 import type {
@@ -10,11 +10,28 @@ import type {
 } from '@/types/api';
 import { formatDateTime } from '@/utils/format';
 import { usePermissionStore } from '@/stores/permissions';
+import { useTableColumns } from '@/composables/use-table-columns';
 
 const logs = ref<LoginLogPageItem[]>([]);
 const total = ref(0);
 const tableLoading = ref(false);
+const tableRef = ref<TableInstance>();
 const permissionStore = usePermissionStore();
+
+const { columnWidths, handleHeaderDragend } = useTableColumns(
+  [
+    { label: '日志 ID', width: 200, minWidth: 150 },
+    { label: '用户名', width: 140, minWidth: 80 },
+    { label: '登录 IP', width: 140, minWidth: 90 },
+    { label: '登录地点', width: 160, minWidth: 90 },
+    { label: '操作系统', width: 120, minWidth: 80 },
+    { label: '浏览器', width: 120, minWidth: 80 },
+    { label: '状态', width: 90, minWidth: 70 },
+    { label: '结果描述', width: 180, minWidth: 100 },
+    { label: '登录时间', width: 180, minWidth: 140 },
+  ],
+  tableRef,
+);
 
 const canQueryLoginLogs = computed(() =>
   permissionStore.hasPermission('sys:log:login:query'),
@@ -185,22 +202,61 @@ onMounted(() => {
         <h2>登录日志列表</h2>
       </div>
 
-      <el-table v-loading="tableLoading" :data="logs" row-key="id" class="login-log-table">
-        <el-table-column prop="id" label="日志 ID" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="username" label="用户名" min-width="140" show-overflow-tooltip />
-        <el-table-column prop="ip" label="登录 IP" min-width="140" show-overflow-tooltip />
-        <el-table-column prop="loginLocation" label="登录地点" min-width="160" show-overflow-tooltip />
-        <el-table-column prop="os" label="操作系统" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="browser" label="浏览器" min-width="120" show-overflow-tooltip />
-        <el-table-column label="状态" width="90">
+      <el-table
+        ref="tableRef"
+        v-loading="tableLoading"
+        :data="logs"
+        row-key="id"
+        class="login-log-table"
+        border
+        @header-dragend="handleHeaderDragend"
+      >
+        <el-table-column prop="id" label="日志 ID" :width="columnWidths['日志 ID']" show-overflow-tooltip />
+        <el-table-column
+          prop="username"
+          label="用户名"
+          :width="columnWidths['用户名']"
+          show-overflow-tooltip
+          sortable
+        />
+        <el-table-column prop="ip" label="登录 IP" :width="columnWidths['登录 IP']" show-overflow-tooltip />
+        <el-table-column
+          prop="loginLocation"
+          label="登录地点"
+          :width="columnWidths['登录地点']"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="os"
+          label="操作系统"
+          :width="columnWidths['操作系统']"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="browser"
+          label="浏览器"
+          :width="columnWidths['浏览器']"
+          show-overflow-tooltip
+        />
+        <el-table-column label="状态" :width="columnWidths['状态']">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'danger'" effect="light">
               {{ row.status === 1 ? '成功' : '失败' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="message" label="结果描述" min-width="180" show-overflow-tooltip />
-        <el-table-column label="登录时间" min-width="180">
+        <el-table-column
+          prop="message"
+          label="结果描述"
+          :width="columnWidths['结果描述']"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="createTime"
+          label="登录时间"
+          :width="columnWidths['登录时间']"
+          sortable
+        >
           <template #default="{ row }">
             {{ formatDateTime(row.createTime) }}
           </template>

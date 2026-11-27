@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { ElMessage, ElMessageBox, type TableInstance } from 'element-plus';
 import { Eye, Pencil, Plus, Trash2 } from 'lucide-vue-next';
 import { sysMenuApi } from '@/api/sys-menu';
 import type { MenuId, MenuInfo, MenuItem } from '@/types/api';
@@ -10,9 +10,11 @@ import { getMenuTypeLabel, getMenuTypeTagType } from '@/utils/menu-types';
 import AddMenuDrawer from '@/components/AddMenuDrawer.vue';
 import EditMenuDrawer from '@/components/EditMenuDrawer.vue';
 import { usePermissionStore } from '@/stores/permissions';
+import { useTableColumns } from '@/composables/use-table-columns';
 
 const menus = ref<MenuItem[]>([]);
 const tableLoading = ref(false);
+const tableRef = ref<TableInstance>();
 const expandedKeys = ref<MenuId[]>([]);
 const drawerVisible = ref(false);
 const detailLoading = ref(false);
@@ -39,6 +41,19 @@ interface MenuTreeItem extends MenuItem {
 }
 
 const menuTree = computed(() => buildMenuTree(menus.value));
+
+const { columnWidths, handleHeaderDragend } = useTableColumns(
+  [
+    { label: '菜单名称', width: 180, minWidth: 120 },
+    { label: '菜单类型', width: 90, minWidth: 70 },
+    { label: '路由地址', width: 140, minWidth: 90 },
+    { label: '权限标识', width: 170, minWidth: 110 },
+    { label: '排序', width: 70, minWidth: 60 },
+    { label: '可见性', width: 90, minWidth: 70 },
+    { label: '操作', width: 240, minWidth: 160 },
+  ],
+  tableRef,
+);
 
 function handleExpandChange(row: MenuTreeItem, expandedRows: MenuTreeItem[]) {
   expandedKeys.value = expandedRows.map((item) => item.id);
@@ -234,19 +249,22 @@ onMounted(() => {
       </div>
 
       <el-table
+        ref="tableRef"
         v-loading="tableLoading"
         :data="menuTree"
         row-key="id"
         class="menu-table"
+        border
         :expand-row-keys="expandedKeys"
         :tree-props="{ children: 'children' }"
         @expand-change="handleExpandChange"
+        @header-dragend="handleHeaderDragend"
         @row-click="openDetail"
       >
         <template #empty>
           <el-empty description="暂无菜单" :image-size="72" />
         </template>
-        <el-table-column label="菜单名称" min-width="180" show-overflow-tooltip>
+        <el-table-column label="菜单名称" :width="columnWidths['菜单名称']" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="menu-name-cell">
               <component
@@ -258,25 +276,35 @@ onMounted(() => {
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="菜单类型" width="90" align="center">
+        <el-table-column
+          label="菜单类型"
+          :width="columnWidths['菜单类型']"
+          align="center"
+        >
           <template #default="{ row }">
             <el-tag size="small" effect="light" :type="getMenuTypeTagType(row.menuType)">
               {{ getMenuTypeLabel(row.menuType) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="路由地址" min-width="140" show-overflow-tooltip>
+        <el-table-column label="路由地址" :width="columnWidths['路由地址']" show-overflow-tooltip>
           <template #default="{ row }">
             {{ row.path || '-' }}
           </template>
         </el-table-column>
-        <el-table-column label="权限标识" min-width="170" show-overflow-tooltip>
+        <el-table-column label="权限标识" :width="columnWidths['权限标识']" show-overflow-tooltip>
           <template #default="{ row }">
             {{ row.perms || '-' }}
           </template>
         </el-table-column>
-        <el-table-column prop="sort" label="排序" width="70" align="center" />
-        <el-table-column label="可见性" width="90" align="center">
+        <el-table-column
+          prop="sort"
+          label="排序"
+          :width="columnWidths['排序']"
+          align="center"
+          sortable
+        />
+        <el-table-column label="可见性" :width="columnWidths['可见性']" align="center">
           <template #default="{ row }">
             <el-tag
               v-if="row.visible !== undefined && row.menuType !== 'F'"
@@ -291,7 +319,7 @@ onMounted(() => {
         <el-table-column
           v-if="canShowMenuActions"
           label="操作"
-          width="240"
+          :width="columnWidths['操作']"
           align="center"
           header-align="center"
           fixed="right"
