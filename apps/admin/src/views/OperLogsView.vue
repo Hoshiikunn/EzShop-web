@@ -1,7 +1,18 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
-import { ElMessage } from 'element-plus';
-import { Braces, CircleAlert, Copy, Eye, Globe, Info, RefreshCw, Search, User } from 'lucide-vue-next';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import {
+  Braces,
+  CircleAlert,
+  Copy,
+  Eye,
+  Globe,
+  Info,
+  RefreshCw,
+  Search,
+  Trash2,
+  User,
+} from 'lucide-vue-next';
 import { sysLogApi } from '@/api/sys-log';
 import type {
   OperLogPageItem,
@@ -14,10 +25,21 @@ import { usePermissionStore } from '@/stores/permissions';
 const logs = ref<OperLogPageItem[]>([]);
 const total = ref(0);
 const tableLoading = ref(false);
+const selectedLogs = ref<OperLogPageItem[]>([]);
+const deleting = ref(false);
 const permissionStore = usePermissionStore();
 
 const canQueryOperLogs = computed(() =>
   permissionStore.hasPermission('sys:log:oper:query'),
+);
+const canDeleteOperLogs = computed(() =>
+  permissionStore.hasPermission('sys:log:oper:delete'),
+);
+
+const selectedCount = computed(() => selectedLogs.value.length);
+
+const batchDeleteDisabled = computed(
+  () => deleting.value || selectedCount.value === 0,
 );
 
 const detailVisible = ref(false);
@@ -201,6 +223,49 @@ async function copyRequestParams() {
   }
 }
 
+function handleSelectionChange(rows: OperLogPageItem[]) {
+  selectedLogs.value = rows;
+}
+
+function buildDeleteConfirmMessage(): string {
+  const count = selectedCount.value;
+
+  return count === 1
+    ? '确定要删除选中的 1 条操作日志吗？删除后不可恢复。'
+    : `确定要删除选中的 ${count} 条操作日志吗？删除后不可恢复。`;
+}
+
+async function confirmDeleteSelectedLogs() {
+  if (!canDeleteOperLogs.value || selectedCount.value === 0) {
+    return;
+  }
+
+  try {
+    await ElMessageBox.confirm(buildDeleteConfirmMessage(), '删除操作日志', {
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+    });
+  } catch {
+    return;
+  }
+
+  deleting.value = true;
+
+  try {
+    await sysLogApi.batchDeleteOperLog(selectedLogs.value.map((log) => log.id));
+    ElMessage.success(
+      selectedCount.value === 1 ? '操作日志已删除' : `已删除 ${selectedCount.value} 条操作日志`,
+    );
+    selectedLogs.value = [];
+    await loadLogs();
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '操作日志删除失败');
+  } finally {
+    deleting.value = false;
+  }
+}
+
 onMounted(() => {
   void loadLogs();
 });
@@ -284,6 +349,17 @@ onMounted(() => {
     <div class="panel table-panel">
       <div class="table-header">
         <h2>操作日志列表</h2>
+        <div v-if="canDeleteOperLogs" class="header-actions">
+          <button
+            class="danger-button"
+            type="button"
+            :disabled="batchDeleteDisabled"
+            @click="confirmDeleteSelectedLogs"
+          >
+            <Trash2 :size="16" />
+            删除所选{{ selectedCount ? `（${selectedCount}）` : '' }}
+          </button>
+        </div>
       </div>
 
       <el-table
@@ -291,7 +367,9 @@ onMounted(() => {
         :data="logs"
         row-key="id"
         class="oper-log-table"
+        @selection-change="handleSelectionChange"
       >
+        <el-table-column v-if="canDeleteOperLogs" type="selection" width="44" />
         <el-table-column prop="id" label="日志 ID" min-width="190" show-overflow-tooltip />
         <el-table-column prop="module" label="所属模块" min-width="110" show-overflow-tooltip />
         <el-table-column prop="operation" label="操作内容" min-width="130" show-overflow-tooltip />
@@ -553,6 +631,40 @@ onMounted(() => {
 .table-header h2 {
   margin: 0;
   font-size: 18px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.danger-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 13px;
+  border: 1px solid rgba(210, 73, 74, 0.36);
+  border-radius: 7px;
+  color: #d2494a;
+  background: #fff;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.danger-button:hover:not(:disabled) {
+  color: #fff;
+  border-color: #d2494a;
+  background: #d2494a;
+}
+
+.danger-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .table-action {
