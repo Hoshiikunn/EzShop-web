@@ -9,7 +9,6 @@ import type {
   UserInitInfo,
   UserResetPasswordInfo,
   UserUpdatePayload,
-  UserBatchDeletePayload,
   UserStatusPayload,
 } from '@/types/api';
 
@@ -41,11 +40,11 @@ export const sysUserApi = {
       data: payload,
     });
   },
-  batchDelete(payload: UserBatchDeletePayload) {
+  batchDelete(userIds: UserId[]) {
     return requestJson<null>({
       url: '/admin/sys/user/batch/delete',
       method: 'post',
-      data: payload,
+      data: userIds,
     });
   },
   changeStatus(payload: UserStatusPayload) {
