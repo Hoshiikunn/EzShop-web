@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
-import { ElMessage, ElMessageBox, type TableInstance } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { Eye, ListTree, Pencil, Plus, RefreshCw, Search, Trash2 } from 'lucide-vue-next';
 import { ApiError } from '@/api/client';
 import { sysRoleApi } from '@/api/sys-role';
@@ -20,7 +20,6 @@ import { getMenuTypeLabel, getMenuTypeTagType } from '@/utils/menu-types';
 import AddRoleDrawer from '@/components/AddRoleDrawer.vue';
 import EditRoleDrawer from '@/components/EditRoleDrawer.vue';
 import { usePermissionStore } from '@/stores/permissions';
-import { useTableColumns } from '@/composables/use-table-columns';
 
 const roles = ref<RolePageItem[]>([]);
 const total = ref(0);
@@ -35,21 +34,6 @@ const editRoleId = ref<RoleId | null>(null);
 const deletingRoleId = ref<RoleId | null>(null);
 const statusChangingId = ref<RoleId | null>(null);
 const permissionStore = usePermissionStore();
-const tableRef = ref<TableInstance>();
-
-const { columnWidths, handleHeaderDragend } = useTableColumns(
-  [
-    { label: 'ID', width: 110, minWidth: 80 },
-    { label: '角色名称', width: 150, minWidth: 90 },
-    { label: '角色权限字符', width: 160, minWidth: 100 },
-    { label: '排序', width: 80, minWidth: 60 },
-    { label: '状态', width: 130, minWidth: 80 },
-    { label: '备注', width: 180, minWidth: 100 },
-    { label: '创建时间', width: 180, minWidth: 140 },
-    { label: '操作', width: 240, minWidth: 160 },
-  ],
-  tableRef,
-);
 
 const canQueryRoles = computed(() => permissionStore.hasPermission('sys:role:query'));
 const canViewRoleDetails = computed(() => permissionStore.hasPermission('sys:role:info'));
@@ -435,37 +419,29 @@ async function handleRoleUpdated(roleId: RoleId) {
       </div>
 
       <el-table
-        ref="tableRef"
         v-loading="tableLoading"
         :data="roles"
         row-key="id"
         class="role-table"
-        border
-        @header-dragend="handleHeaderDragend"
         @row-click="openDetail"
       >
-        <el-table-column prop="id" label="ID" :width="columnWidths['ID']" />
-        <el-table-column
-          prop="roleName"
-          label="角色名称"
-          :width="columnWidths['角色名称']"
-          show-overflow-tooltip
-        />
+        <el-table-column prop="id" label="ID" min-width="170" />
+        <el-table-column prop="roleName" label="角色名称" min-width="140" show-overflow-tooltip />
         <el-table-column
           prop="roleKey"
           label="角色权限字符"
-          :width="columnWidths['角色权限字符']"
+          min-width="160"
           show-overflow-tooltip
         >
           <template #default="{ row }">
             <code class="role-key">{{ row.roleKey }}</code>
           </template>
         </el-table-column>
-        <el-table-column prop="sort" label="排序" :width="columnWidths['排序']" sortable />
+        <el-table-column prop="sort" label="排序" min-width="70" sortable />
         <el-table-column
           prop="status"
           label="状态"
-          :width="columnWidths['状态']"
+          min-width="110"
           align="center"
           header-align="center"
           sortable
@@ -493,13 +469,8 @@ async function handleRoleUpdated(roleId: RoleId) {
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="remark" label="备注" :width="columnWidths['备注']" show-overflow-tooltip />
-        <el-table-column
-          prop="createTime"
-          label="创建时间"
-          :width="columnWidths['创建时间']"
-          sortable
-        >
+        <el-table-column prop="remark" label="备注" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="createTime" label="创建时间" min-width="170" sortable>
           <template #default="{ row }">
             {{ formatDateTime(row.createTime) }}
           </template>
@@ -507,7 +478,7 @@ async function handleRoleUpdated(roleId: RoleId) {
         <el-table-column
           v-if="canShowRoleActions"
           label="操作"
-          :width="columnWidths['操作']"
+          min-width="240"
           align="center"
           header-align="center"
           fixed="right"
