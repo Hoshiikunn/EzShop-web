@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import { sysUserApi } from '@/api/sys-user';
 import { sysRoleApi } from '@/api/sys-role';
@@ -7,11 +7,11 @@ import type {
   Gender,
   RoleBriefItem,
   RoleId,
-  RoleListItem,
   UserUpdatePayload,
   UserId,
 } from '@/types/api';
 import AvatarFileInput from '@/components/AvatarFileInput.vue';
+import { usePermissionStore } from '@/stores/permissions';
 
 const props = defineProps<{
   userId: UserId | null;
@@ -31,7 +31,16 @@ const formRef = ref<FormInstance>();
 const loading = ref(false);
 const submitting = ref(false);
 const avatarFile = ref<File | null>(null);
-const roleOptions = ref<RoleListItem[]>([]);
+const roleOptions = ref<EditRoleOption[]>([]);
+const permissionStore = usePermissionStore();
+
+const canManageRoleOptions = computed(() =>
+  permissionStore.hasPermission('sys:role:list'),
+);
+
+type EditRoleOption = RoleBriefItem & {
+  status?: 0 | 1;
+};
 
 type EditUserForm = Omit<
   UserUpdatePayload,
@@ -144,9 +153,12 @@ async function loadUser(userId: UserId) {
   roleOptions.value = [];
 
   try {
+    const needsRoleList = canManageRoleOptions.value;
     const [userResult, roleResult] = await Promise.allSettled([
       sysUserApi.info(userId),
-      sysRoleApi.list(),
+      needsRoleList
+        ? sysRoleApi.list()
+        : Promise.resolve<RoleBriefItem[] | null>(null),
     ]);
 
     if (requestToken !== loadUserToken) {
@@ -167,8 +179,19 @@ async function loadUser(userId: UserId) {
       ElMessage.error(
         roleResult.reason instanceof Error ? roleResult.reason.message : '角色列表加载失败',
       );
+    }
+
+    if (roleResult.status === 'fulfilled' && roleResult.value) {
+      roleOptions.value = roleResult.value.map((role) => ({
+        id: role.id,
+        roleName: role.roleName,
+        status: role.status,
+      }));
     } else {
-      roleOptions.value = roleResult.value;
+      roleOptions.value = (userResult.value.roles ?? []).map((role) => ({
+        id: role.id,
+        roleName: role.roleName,
+      }));
     }
   } finally {
     if (requestToken === loadUserToken) {
@@ -286,6 +309,7 @@ watch(
               </div>
             </el-option>
           </el-select>
+          <p v-if="!canManageRoleOptions" class="role-note">无权限，无法添加角色</p>
         </el-form-item>
 
         <div class="form-actions">
@@ -311,6 +335,12 @@ watch(
 
 .role-select {
   width: 100%;
+}
+
+.role-note {
+  margin: 8px 0 0;
+  color: #d2494a;
+  font-size: 12px;
 }
 
 .role-option {
